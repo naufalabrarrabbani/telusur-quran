@@ -1,19 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { StatusMarker } from '@/components/ui/StatusMarker'
+import { search } from '@/lib/search'
+import { verses, wordIndex } from '@/lib/data'
 
 interface CekKlaimScreenProps {
   onNavigate: (screen: string) => void
+  onSearch?: (query: string) => void
 }
 
-export function CekKlaimScreen({ onNavigate }: CekKlaimScreenProps) {
+export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
   const [adamMode, setAdamMode] = useState<'exact' | 'contains'>('contains')
   const [verifyClicked, setVerifyClicked] = useState(false)
 
-  const adamN = adamMode === 'exact' ? 20 : 25
-  const isaN = adamMode === 'exact' ? 16 : 25
-  const isSama = adamMode === 'contains'
+  // Real data: Adam & Isa counts
+  const adamResult = useMemo(() => search('adam', adamMode, verses, wordIndex), [adamMode])
+  const isaResult = useMemo(() => search('isa', adamMode, verses, wordIndex), [adamMode])
+
+  const adamN = adamResult.totalCount
+  const isaN = isaResult.totalCount
+  const isSama = adamN === isaN
+
+  // Real data: Setan (lemma)
+  const setanResult = useMemo(() => search('setan', 'lemma', verses, wordIndex), [])
+
+  // Real data: Musa
+  const musaContains = useMemo(() => search('musa', 'contains', verses, wordIndex), [])
+  const musaExact = useMemo(() => search('musa', 'exact', verses, wordIndex), [])
 
   return (
     <div>
@@ -79,17 +93,17 @@ export function CekKlaimScreen({ onNavigate }: CekKlaimScreenProps) {
       {/* Setan 88x */}
       <article className="bg-surface border border-line rounded-[6px] p-4 mb-[10px]">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="m-0 text-[16px] font-extrabold leading-[1.35]">Setan disebut 88 kali</h3>
+          <h3 className="m-0 text-[16px] font-extrabold leading-[1.35]">Setan disebut {setanResult.totalCount} kali</h3>
           <StatusMarker status="lolos" label="LOLOS" />
         </div>
         <div className="flex items-baseline gap-[10px] mt-3">
-          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">88×</span>
+          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">{setanResult.totalCount}×</span>
           <span className="text-[13px] text-ink-3 font-semibold leading-[1.45]">
-            Mode <strong>Lemma</strong> — 70 bentuk tunggal + 18 bentuk jamak <span style={{ fontFamily: 'Amiri, serif', fontSize: '15px', direction: 'rtl', unicodeBidi: 'isolate' }}>شياطين</span>
+            Mode <strong>Lemma</strong> — semua bentuk kata شيطان
           </span>
         </div>
         <button
-          onClick={() => onNavigate('hasil-cari')}
+          onClick={() => onSearch ? onSearch('setan') : onNavigate('hasil-cari')}
           className="mt-3 w-full text-[13px] font-bold bg-transparent text-emerald border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] hover:border-emerald"
         >
           Lihat ayat-ayatnya →
@@ -103,9 +117,9 @@ export function CekKlaimScreen({ onNavigate }: CekKlaimScreenProps) {
           <StatusMarker status="bersyarat" label="LOLOS BERSYARAT" />
         </div>
         <div className="flex items-baseline gap-[10px] mt-3">
-          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">136×</span>
+          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">{musaContains.totalCount}×</span>
           <span className="text-[13px] text-ink-3 font-semibold leading-[1.45]">
-            Benar jika dihitung <strong>termasuk awalan</strong> (و / ل / ب). Kata persisnya: <strong>129×</strong>.
+            Benar jika dihitung <strong>termasuk awalan</strong> (و / ل / ب). Kata persisnya: <strong>{musaExact.totalCount}×</strong>.
           </span>
         </div>
       </article>

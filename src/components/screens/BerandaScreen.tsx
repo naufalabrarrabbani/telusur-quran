@@ -4,6 +4,7 @@ import { StatusMarker } from '@/components/ui/StatusMarker'
 
 interface BerandaScreenProps {
   onNavigate: (screen: string) => void
+  onSearch?: (query: string) => void
 }
 
 const emotions = [
@@ -21,11 +22,12 @@ const tags = [
   { query: 'dunia vs akhirat' },
 ]
 
-export function BerandaScreen({ onNavigate }: BerandaScreenProps) {
+export function BerandaScreen({ onNavigate, onSearch }: BerandaScreenProps) {
   const handleSearch = (q: string) => {
-    const lower = q.trim().toLowerCase()
-    if (lower.includes('setan') || lower.includes('syaitan') || lower.includes('syetan')) {
-      onNavigate('hasil-cari')
+    const trimmed = q.trim()
+    if (!trimmed) return
+    if (onSearch) {
+      onSearch(trimmed)
     }
   }
 
@@ -125,7 +127,7 @@ export function BerandaScreen({ onNavigate }: BerandaScreenProps) {
           </p>
           <StatusMarker status="bersyarat" label="LOLOS BERSYARAT" />
         </button>
-        <button onClick={() => onNavigate('hasil-cari')} className="bg-surface border border-line rounded-[6px] p-4 cursor-pointer text-left w-full transition-[border-color,box-shadow] duration-[120ms] hover:border-emerald hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <button onClick={() => handleSearch('setan')} className="bg-surface border border-line rounded-[6px] p-4 cursor-pointer text-left w-full transition-[border-color,box-shadow] duration-[120ms] hover:border-emerald hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
           <div className="text-[32px] font-extrabold tracking-[-0.04em] leading-none text-emerald-deep">
             88<span className="text-gold text-[22px]">×</span>
           </div>
