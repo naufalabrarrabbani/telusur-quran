@@ -5,24 +5,31 @@ import { StatusMarker } from '@/components/ui/StatusMarker'
 interface BerandaScreenProps {
   onNavigate: (screen: string) => void
   onSearch?: (query: string) => void
+  /** Buka kartu Wawasan tertentu (Pintu Emosi) berdasarkan id kartunya */
+  onEmotion?: (cardId: number) => void
 }
 
+// Tiap emosi menunjuk id kartu Wawasan yang ayatnya jadi jangkar:
+// Galau -> Ad-Dhuha (id 3), Cemas -> 13:28, Sendirian -> 2:186,
+// Takut Gagal -> 94:5-6, Bersyukur -> 14:7.
 const emotions = [
-  { label: 'GALAU', desc: 'Ngerasa ditinggal', icon: 'https://img.icons8.com/doodle/48/heart-with-arrow.png', live: true, goto: 'wawasan' },
-  { label: 'CEMAS', desc: 'Pikiran nggak berhenti', icon: 'https://img.icons8.com/doodle/48/brain.png', feel: 'Cemas' },
-  { label: 'SENDIRIAN', desc: 'Nggak ada yang ngerti', icon: 'https://img.icons8.com/doodle/48/ghost--v1.png', feel: 'Ngerasa sendirian' },
-  { label: 'TAKUT GAGAL', desc: 'Belum mulai udah ragu', icon: 'https://img.icons8.com/doodle/48/puzzle.png', feel: 'Takut gagal' },
-  { label: 'BERSYUKUR', desc: 'Lagi di titik yang baik', icon: 'https://img.icons8.com/doodle/48/pray.png', feel: 'Lagi bersyukur', wide: true },
+  { label: 'GALAU', desc: 'Ngerasa ditinggal', icon: 'https://img.icons8.com/doodle/48/heart-with-arrow.png', cardId: 3 },
+  { label: 'CEMAS', desc: 'Pikiran nggak berhenti', icon: 'https://img.icons8.com/doodle/48/brain.png', cardId: 31 },
+  { label: 'SENDIRIAN', desc: 'Nggak ada yang ngerti', icon: 'https://img.icons8.com/doodle/48/ghost--v1.png', cardId: 32 },
+  { label: 'TAKUT GAGAL', desc: 'Belum mulai udah ragu', icon: 'https://img.icons8.com/doodle/48/puzzle.png', cardId: 33 },
+  { label: 'BERSYUKUR', desc: 'Lagi di titik yang baik', icon: 'https://img.icons8.com/doodle/48/pray.png', cardId: 34, wide: true },
 ]
 
 const tags = [
   { query: 'setan' },
   { query: 'sabar' },
   { query: 'Firaun' },
+  { query: 'shalat' },
+  { query: 'iblis' },
   { query: 'dunia vs akhirat' },
 ]
 
-export function BerandaScreen({ onNavigate, onSearch }: BerandaScreenProps) {
+export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreenProps) {
   const handleSearch = (q: string) => {
     const trimmed = q.trim()
     if (!trimmed) return
@@ -62,8 +69,8 @@ export function BerandaScreen({ onNavigate, onSearch }: BerandaScreenProps) {
         {emotions.map((e) => (
           <button
             key={e.label}
-            onClick={() => e.goto ? onNavigate(e.goto) : undefined}
-            className={`text-left text-[13px] font-bold text-ink-2 bg-surface border border-line rounded-[6px] p-[14px_13px] cursor-pointer transition-[border-color,box-shadow] duration-[120ms] leading-[1.4] hover:border-gold hover:shadow-[0_2px_10px_rgba(158,124,26,0.1)] ${e.live ? 'border-gold' : ''} ${e.wide ? 'col-span-2' : ''}`}
+            onClick={() => (onEmotion ? onEmotion(e.cardId) : onNavigate('wawasan'))}
+            className={`text-left text-[13px] font-bold text-ink-2 bg-surface border border-gold rounded-[6px] p-[14px_13px] cursor-pointer transition-[border-color,box-shadow] duration-[120ms] leading-[1.4] hover:border-gold hover:shadow-[0_2px_10px_rgba(158,124,26,0.1)] ${e.wide ? 'col-span-2' : ''}`}
           >
             <span className="block mb-2 w-8 h-8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -158,8 +165,27 @@ export function BerandaScreen({ onNavigate, onSearch }: BerandaScreenProps) {
         </p>
       </button>
 
+      {/* Baca Qur'an teaser (Fase 5A) */}
+      <div className="flex items-baseline justify-between mt-7 mb-[10px] pb-2 border-b border-line-soft">
+        <h2 className="text-[14px] font-extrabold tracking-[0.02em] uppercase text-ink-3">Baru · Baca Qur&apos;an</h2>
+        <button onClick={() => onNavigate('baca')} className="bg-none border-none cursor-pointer text-[12px] font-bold text-emerald p-0">
+          Mulai baca →
+        </button>
+      </div>
+      <button onClick={() => onNavigate('baca')} className="mt-[10px] bg-surface border border-line rounded-[6px] p-4 cursor-pointer text-left w-full transition-[border-color] duration-[120ms] hover:border-emerald">
+        <p className="m-0 text-[15px] font-extrabold text-ink">
+          Baca dengan warna tajwid 🎨
+        </p>
+        <p className="mt-[4px] mb-0 text-[13px] leading-[1.55] text-ink-3">
+          Tiap warna ada hukumnya — ikhfa, idgham, madd, qalqalah — dan tanda berhenti pun berwarna. Ketuk hurufnya untuk tahu artinya, simpan ayat favoritmu dengan bintang.
+        </p>
+      </button>
+
       <footer className="mt-[30px] border-t border-line-soft pt-[14px] text-[11px] leading-[1.6] text-ink-4">
-        <strong className="text-ink-3">Mockup konsep.</strong> Angka terverifikasi dari teks Tanzil. Metodologi hitung selalu ditampilkan — tidak ada klaim tanpa aturan main.
+        Angka terverifikasi dari teks Tanzil. Metodologi hitung selalu ditampilkan — tidak ada klaim tanpa aturan main.
+        <button onClick={() => onNavigate('metodologi')} className="block mt-[6px] bg-none border-none cursor-pointer text-[12px] font-bold text-emerald p-0">
+          Metodologi &amp; Sumber →
+        </button>
       </footer>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { VerseCard } from '@/components/ui/VerseCard'
-import { search, highlightArabic, type SearchResult, type Verse, type WordIndex, type SurahMeta } from '@/lib/search'
+import { search, highlightArabic, matchedTokensByVerse, type SearchResult, type Verse, type WordIndex, type SurahMeta } from '@/lib/search'
 import { loadData, getVerse, getSurah } from '@/lib/data'
 
 interface HasilCariScreenProps {
@@ -60,6 +60,11 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
     if (!verses || !wordIndex) return null
     return search(searchQuery, activeMode, verses, wordIndex)
   }, [searchQuery, activeMode, verses, wordIndex])
+
+  const matchedMap = useMemo(() => {
+    if (!wordIndex) return null
+    return matchedTokensByVerse(searchQuery, activeMode, wordIndex)
+  }, [searchQuery, activeMode, wordIndex])
 
   const exactResult: SearchResult | null = useMemo(() => {
     if (!verses || !wordIndex || !result || activeMode !== 'lemma' || !result.breakdown || result.breakdown.length <= 1) return null
@@ -139,7 +144,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
           ayahRef={`${featuredVerse.surah_no}:${featuredVerse.ayah_no}`}
           juz={featuredVerse.makkiyah ? 'Makkiyah' : 'Madaniyah'}
           featured
-          arabic={highlightArabic(featuredVerse.text_uthmani, searchQuery)}
+          arabic={highlightArabic(featuredVerse.text_uthmani, featuredVerse.text_simple, matchedMap?.get(result.verseIds[0]), searchQuery, activeMode)}
           translation={featuredVerse.translation_id}
         />
       )}
@@ -190,7 +195,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
             surah={`QS ${s?.name_latin || v.surah_name_latin}`}
             ayahRef={`${v.surah_no}:${v.ayah_no}`}
             juz={v.makkiyah ? 'Makkiyah' : 'Madaniyah'}
-            arabic={highlightArabic(v.text_uthmani, searchQuery)}
+            arabic={highlightArabic(v.text_uthmani, v.text_simple, matchedMap?.get(vid), searchQuery, activeMode)}
             translation={v.translation_id}
           />
         )

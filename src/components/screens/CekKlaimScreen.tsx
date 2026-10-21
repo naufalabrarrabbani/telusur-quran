@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { StatusMarker } from '@/components/ui/StatusMarker'
-import { search, type Verse, type WordIndex } from '@/lib/search'
+import { search, searchExact, type Verse, type WordIndex } from '@/lib/search'
 import { loadData } from '@/lib/data'
+
+const AKHIRAT_FORMS = ['الآخرة', 'بالآخرة', 'والآخرة', 'وللآخرة', 'وبالآخرة', 'للآخرة']
 
 interface CekKlaimScreenProps {
   onNavigate: (screen: string) => void
@@ -12,7 +14,6 @@ interface CekKlaimScreenProps {
 
 export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
   const [adamMode, setAdamMode] = useState<'exact' | 'contains'>('contains')
-  const [verifyClicked, setVerifyClicked] = useState(false)
   const [verses, setVerses] = useState<Verse[] | null>(null)
   const [wordIndex, setWordIndex] = useState<WordIndex | null>(null)
   const [loading, setLoading] = useState(true)
@@ -54,6 +55,17 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
     if (!verses || !wordIndex) return null
     return search('musa', 'exact', verses, wordIndex)
   }, [verses, wordIndex])
+
+  // Real data: Dunia = Akhirat — keluarga kata al-akhirah dihitung per bentuk
+  const duniaExact = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return search('dunia', 'exact', verses, wordIndex)
+  }, [verses, wordIndex])
+  const akhiratForms = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return AKHIRAT_FORMS.map((form) => ({ form, count: searchExact(form, verses, wordIndex).count }))
+  }, [verses, wordIndex])
+  const akhiratFamily = akhiratForms?.reduce((a, f) => a + f.count, 0) ?? 0
 
   if (loading || !verses || !wordIndex) {
     return (
@@ -140,7 +152,7 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
           </span>
         </div>
         <button
-          onClick={() => onSearch ? onSearch('setan') : onNavigate('hasil-cari')}
+          onClick={() => onSearch ? onSearch('setan') : onNavigate('beranda')}
           className="mt-3 w-full text-[13px] font-bold bg-transparent text-emerald border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] hover:border-emerald"
         >
           Lihat ayat-ayatnya →
@@ -162,23 +174,37 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
       </article>
 
       {/* Dunia = Akhirat */}
-      <article className="bg-surface border border-line rounded-[6px] p-4 mb-[10px] opacity-55">
+      <article className="bg-surface border border-line rounded-[6px] p-4 mb-[10px]">
         <div className="flex justify-between items-start gap-2">
           <h3 className="m-0 text-[16px] font-extrabold leading-[1.35]">Dunia = Akhirat, 115 = 115?</h3>
-          <StatusMarker status="belum" label="BELUM DICEK" />
+          <StatusMarker status="bersyarat" label="LOLOS BERSYARAT" />
+        </div>
+        <div className="flex items-baseline gap-[10px] mt-3">
+          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">
+            {duniaExact?.totalCount ?? '...'} <span className="text-gold text-[24px]">=</span> {akhiratForms ? akhiratFamily : '...'}
+          </span>
         </div>
         <p className="mt-[6px] mb-0 text-[13px] leading-[1.6] text-ink-3">
-          Klaim populer: kata <em>ad-dunya</em> dan <em>al-akhirah</em> disebut sama-sama 115 kali. Curiga sensitif mode hitung — belum kami verifikasi.
+          Benar — dengan syarat yang dinyatakan terbuka. Kata <em>ad-dunya</em> hanya punya satu bentuk ({duniaExact?.totalCount ?? '...'}×). Kata <em>al-akhirah</em> kata persisnya hanya {akhiratForms?.[0]?.count ?? '...'}×; angka 115 tercapai bila <strong>seluruh keluarga katanya</strong> (6 bentuk berawalan) dihitung. Rinciannya, dihitung live dari indeks yang sama:
         </p>
-        <button
-          onClick={() => setVerifyClicked(true)}
-          disabled={verifyClicked}
-          className={`mt-3 w-full text-[13px] font-bold bg-transparent border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] ${
-            verifyClicked ? 'border-green text-green' : 'text-emerald hover:border-emerald'
-          }`}
-        >
-          {verifyClicked ? '✓ Masuk antrean verifikasi' : 'Minta verifikasi'}
-        </button>
+        {akhiratForms && (
+          <div className="mt-[10px]">
+            {akhiratForms.map((f) => (
+              <div key={f.form} className="flex justify-between items-baseline gap-[10px] py-[6px] border-b border-line-soft last:border-b-0 text-[13px] text-ink-2 font-semibold">
+                <span style={{ fontFamily: 'Amiri, serif', fontSize: '16px', direction: 'rtl', unicodeBidi: 'isolate' }}>{f.form}</span>
+                <span className="font-extrabold text-ink whitespace-nowrap tabular-nums">{f.count}×</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {onSearch && (
+          <button
+            onClick={() => onSearch('akhirat')}
+            className="mt-3 w-full text-[13px] font-bold bg-transparent text-emerald border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] hover:border-emerald"
+          >
+            Cek sendiri → cari &quot;akhirat&quot;
+          </button>
+        )}
       </article>
 
       {/* Hari 365 */}
@@ -191,6 +217,13 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
           Klaim populer yang sensitif cara hitung — hasilnya berubah tergantung bentuk kata mana saja yang ikut dihitung. Kartu ini tetap ditampilkan supaya publik bisa menilai sendiri.
         </p>
       </article>
+
+      <button
+        onClick={() => onNavigate('metodologi')}
+        className="mt-1 w-full text-[13px] font-bold bg-transparent text-emerald border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] hover:border-emerald"
+      >
+        Bagaimana kami menghitung &amp; memberi vonis? → Metodologi &amp; Sumber
+      </button>
     </div>
   )
 }

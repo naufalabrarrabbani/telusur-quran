@@ -104,6 +104,36 @@ export function updateStreak(): void {
   safeSet(KEYS.STREAK_DATE, today)
 }
 
+// Migrasi satu kali dari penyimpanan BacaScreen lama (Fase 5A, kunci 'tq:*')
+// ke skema penyimpanan ini ('tq_*'). Idempoten: kunci lama dihapus setelah
+// digabung, jadi aman dipanggil berulang dari beberapa layar.
+export function migrateLegacyBookmarks(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const legacyBookmarks = localStorage.getItem('tq:bookmarks')
+    if (legacyBookmarks) {
+      const refs = JSON.parse(legacyBookmarks) as string[]
+      const saved = getSavedAyat()
+      for (const ref of refs) {
+        const [s, a] = ref.split(':').map(Number)
+        if (s && a && !saved.some((x) => x.surah === s && x.ayat === a)) {
+          saved.push({ surah: s, ayat: a })
+        }
+      }
+      safeSet(KEYS.SAVED_AYAT, saved)
+      localStorage.removeItem('tq:bookmarks')
+    }
+    const legacyLastRead = localStorage.getItem('tq:lastread')
+    if (legacyLastRead && !getLastRead()) {
+      const lr = JSON.parse(legacyLastRead) as { s?: number; a?: number }
+      if (lr.s && lr.a) setLastRead(lr.s, lr.a)
+      localStorage.removeItem('tq:lastread')
+    }
+  } catch {
+    // abaikan — migrasi gagal tidak boleh mematahkan layar baca
+  }
+}
+
 // Arabic font preference
 export function getArabicFont(): string {
   return safeGet<string>(KEYS.ARABIC_FONT, 'Amiri')

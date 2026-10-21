@@ -38,3 +38,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Kunci margin kanan-kiri: halaman tidak boleh bisa bergeser horizontal.
+   overflow-x: clip dipakai (bukan hidden) supaya tidak membuat scroll
+   container baru — position: fixed/sticky di dalamnya tetap normal. */
+html,
+body {
+  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100%;
+}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import {
   getLastRead,
   setLastRead,
@@ -16,7 +17,15 @@ import {
   setShowTajwid as saveShowTajwid,
   getShowTranslation,
   setShowTranslation as saveShowTranslation,
+  migrateLegacyBookmarks,
 } from '@/lib/quran-storage'
+import {
+  TAJWID_RULES,
+  TAJWID_GROUPS,
+  isWaqfRule,
+  loadTajwidSurah,
+  type TajwidSurah,
+} from '@/lib/tajwid'
 
 interface SurahMeta {
   number: number
@@ -44,30 +53,40 @@ interface BacaReadScreenProps {
   onBack: () => void
 }
 
-const ARABIC_FONTS = [
-  { id: 'Amiri', label: 'Amiri', google: '' },
+interface ArabicFontDef {
+  id: string
+  label: string
+  google?: string
+  css?: string
+}
+
+// Amiri dimuat global dari layout. Scheherazade & Noto Naskh dari Google
+// Fonts (dimuat saat dipilih). KFGQPC HAFS tidak ada di Google Fonts —
+// dimuat dari stylesheet cdnfonts (family 'KFGQPC HAFS Uthmanic Script').
+// Versi sebelumnya mendaftarkan KFGQPC tanpa sumber muat sama sekali,
+// jadi pilihan itu tidak pernah benar-benar berganti font.
+const ARABIC_FONTS: ArabicFontDef[] = [
+  { id: 'Amiri', label: 'Amiri' },
   { id: 'Scheherazade New', label: 'Scheherazade', google: 'Scheherazade+New:wght@400;700' },
   { id: 'Noto Naskh Arabic', label: 'Noto Naskh', google: 'Noto+Naskh+Arabic:wght@400;700' },
-  { id: 'KFGQPC Uthmanic Script HAFS', label: 'KFGQPC HAFS', google: '' },
+  { id: 'KFGQPC HAFS Uthmanic Script', label: 'KFGQPC HAFS', css: 'https://fonts.cdnfonts.com/css/kfgqpc-hafs-uthmanic-script' },
 ]
 
-const TAJWID_COLORS = [
-  { key: 'ikhfa', label: "Ikhfa'", color: '#D4A017' },
-  { key: 'idgham', label: 'Idgham', color: '#2874A6' },
-  { key: 'iqlab', label: 'Iqlab', color: '#8E44AD' },
-  { key: 'ghunnah', label: 'Ghunnah', color: '#27AE60' },
-  { key: 'qalqalah', label: 'Qalqalah', color: '#E74C3C' },
-  { key: 'madd', label: 'Madd', color: '#E67E22' },
-]
+// Id font KFGQPC di versi lama (tidak pernah termuat) — dimigrasikan.
+const LEGACY_KFGQPC_ID = 'KFGQPC Uthmanic Script HAFS'
 
-function loadGoogleFont(fontFamily: string, googleParam: string) {
-  if (!googleParam || typeof document === 'undefined') return
-  const id = `gfont-${fontFamily.replace(/\s+/g, '-')}`
+function loadFontCss(fontDef: ArabicFontDef) {
+  if (typeof document === 'undefined') return
+  const href =
+    fontDef.css ??
+    (fontDef.google ? `https://fonts.googleapis.com/css2?family=${fontDef.google}&display=swap` : null)
+  if (!href) return
+  const id = `font-${fontDef.id.replace(/\s+/g, '-')}`
   if (document.getElementById(id)) return
   const link = document.createElement('link')
   link.id = id
   link.rel = 'stylesheet'
-  link.href = `https://fonts.googleapis.com/css2?family=${googleParam}&display=swap`
+  link.href = href
   document.head.appendChild(link)
 }
 
@@ -84,6 +103,9 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
   const [showFontPicker, setShowFontPicker] = useState(false)
   const [progress, setProgress] = useState(0)
   const [copied, setCopied] = useState<number | null>(null)
+  const [tajwidData, setTajwidData] = useState<TajwidSurah | null>(null)
+  const [selectedRule, setSelectedRule] = useState<string | null>(null)
+  const [basmalah, setBasmalah] = useState<string | null>(null)
   const verseListRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -105,19 +127,44 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
       .then((data: Verse[]) => {
         const surahVerses = data.filter((v) => v.surah_no === surahNo)
         setVerses(surahVerses)
+        // Basmalah diambil dari data (ayat 1:1) — teks ayat tidak pernah
+        // diketik tangan di komponen.
+        const b = data.find((v) => v.surah_no === 1 && v.ayah_no === 1)
+        if (b) setBasmalah(b.text_uthmani)
       })
       .catch(() => {})
   }, [surahNo])
 
+  // Data segmen tajwid per surah (edisi quran-tajweed AlQuran Cloud,
+  // diparse offline oleh scripts/build-tajweed.py)
+  useEffect(() => {
+    let cancelled = false
+    setTajwidData(null)
+    setSelectedRule(null)
+    loadTajwidSurah(surahNo)
+      .then((data) => {
+        if (!cancelled) setTajwidData(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [surahNo])
+
   // Load preferences
   useEffect(() => {
+    migrateLegacyBookmarks()
     setShowTajwidState(getShowTajwid())
     setShowTranslationState(getShowTranslation())
     setFontSize(getArabicFontSize())
-    const font = getArabicFont()
+    let font = getArabicFont()
+    if (font === LEGACY_KFGQPC_ID) {
+      font = 'KFGQPC HAFS Uthmanic Script'
+      saveArabicFont(font)
+    }
     setArabicFontState(font)
     const fontDef = ARABIC_FONTS.find((f) => f.id === font)
-    if (fontDef?.google) loadGoogleFont(fontDef.id, fontDef.google)
+    if (fontDef) loadFontCss(fontDef)
   }, [])
 
   // Build saved set
@@ -219,7 +266,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
     setArabicFontState(fontId)
     saveArabicFont(fontId)
     const fontDef = ARABIC_FONTS.find((f) => f.id === fontId)
-    if (fontDef?.google) loadGoogleFont(fontDef.id, fontDef.google)
+    if (fontDef) loadFontCss(fontDef)
     setShowFontPicker(false)
   }, [])
 
@@ -400,14 +447,15 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
         </div>
       </div>
 
-      {/* Basmalah (not for At-Taubah, surah 9) */}
-      {surahNo !== 9 && (
+      {/* Basmalah dari data ayat 1:1 (tidak untuk Al-Fatihah — sudah jadi
+          ayat pertamanya — dan tidak untuk At-Taubah, surah 9) */}
+      {surahNo !== 9 && surahNo !== 1 && basmalah && (
         <div className="text-center pt-7 pb-2 px-5">
           <p
             className="text-[26px] leading-[1.8] text-gold"
             style={{ fontFamily: `${arabicFont}, Amiri, serif`, direction: 'rtl' }}
           >
-            بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            {basmalah}
           </p>
           <div className="w-[60px] h-px bg-line mx-auto mt-3" />
         </div>
@@ -419,6 +467,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
           const key = `${verse.surah_no}:${verse.ayah_no}`
           const isActive = activeVerse === verse.ayah_no
           const isSaved = savedSet.has(key)
+          const tajwidAyah = tajwidData?.ayahs.find((a) => a.n === verse.ayah_no)
 
           return (
             <article
@@ -428,6 +477,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
               onClick={(e) => {
                 if ((e.target as HTMLElement).closest('button')) return
                 setActiveVerse(isActive ? null : verse.ayah_no)
+                setSelectedRule(null)
               }}
               className={`py-[22px] border-b border-line-soft last:border-b-0 cursor-pointer transition-colors ${
                 isActive ? 'bg-gold/8 mx-[-20px] px-5' : ''
@@ -475,7 +525,10 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                 </div>
               </div>
 
-              {/* Arabic text */}
+              {/* Arabic text — segmen berwarna dari data tajweed (bukan
+                  markup di dalam teks ayat; verses.json teksnya polos).
+                  Toggle Tajwid mematikan pewarnaannya. Hover/ketuk segmen
+                  berwarna membuka info hukumnya. */}
               <p
                 className="m-0 text-ink"
                 style={{
@@ -485,14 +538,40 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                   textAlign: 'right',
                   direction: 'rtl',
                   letterSpacing: '0.01em',
-                  ...(showTajwid ? {} : {}),
                 }}
-                dangerouslySetInnerHTML={{
-                  __html: showTajwid
-                    ? verse.text_uthmani
-                    : verse.text_uthmani.replace(/<[^>]*>/g, ''),
-                }}
-              />
+                lang="ar"
+              >
+                {tajwidAyah
+                  ? tajwidAyah.seg.map(([text, code], idx) => {
+                      if (!code) return <span key={idx}>{text}</span>
+                      const rule = TAJWID_RULES[code]
+                      if (!rule) return <span key={idx}>{text}</span>
+                      const waqf = isWaqfRule(code)
+                      const style: React.CSSProperties = !showTajwid
+                        ? {}
+                        : waqf
+                          ? { color: rule.color, backgroundColor: `${rule.color}1F`, borderRadius: 3, padding: '0 2px', fontWeight: 700 }
+                          : { color: rule.color }
+                      return (
+                        <span
+                          key={idx}
+                          style={style}
+                          title={rule.name}
+                          className={showTajwid ? 'cursor-pointer transition-opacity hover:opacity-60' : undefined}
+                          onMouseEnter={() => {
+                            if (showTajwid) setSelectedRule(code)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (showTajwid) setSelectedRule(code)
+                          }}
+                        >
+                          {text}
+                        </span>
+                      )
+                    })
+                  : verse.text_uthmani}
+              </p>
 
               {/* Translation */}
               {showTranslation && (
@@ -505,21 +584,35 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
         })}
       </div>
 
-      {/* Tajwid legend */}
+      {/* Tajwid legend — hukum asli dari lib/tajwid (pemetaan terverifikasi) */}
       {showTajwid && (
         <div className="pt-5 px-5">
           <div className="bg-surface border border-line rounded-[6px] px-4 py-3.5">
             <div className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-ink-3 mb-2.5">
               Legenda Warna Tajwid
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              {TAJWID_COLORS.map((tc) => (
-                <div key={tc.key} className="flex items-center gap-2 text-[12px] font-semibold text-ink-2">
-                  <span className="w-2.5 h-2.5 rounded-[2px] flex-none" style={{ background: tc.color }} />
-                  {tc.label}
+            {TAJWID_GROUPS.map((group) => (
+              <div key={group} className="mb-2.5 last:mb-0">
+                <div className="text-[10px] font-extrabold tracking-[0.06em] uppercase text-ink-4 mb-1.5">{group}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  {Object.entries(TAJWID_RULES)
+                    .filter(([, r]) => r.group === group)
+                    .map(([code, r]) => (
+                      <button
+                        key={code}
+                        onClick={() => setSelectedRule(code)}
+                        className="flex items-center gap-2 text-[12px] font-semibold text-ink-2 bg-none border-none cursor-pointer p-0 text-left"
+                      >
+                        <span className="w-2.5 h-2.5 rounded-[2px] flex-none" style={{ background: r.color }} />
+                        {r.name}
+                      </button>
+                    ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+            <p className="m-0 mt-2.5 text-[10.5px] leading-[1.55] text-ink-4">
+              Ketuk nama hukum atau huruf berwarna di ayat untuk penjelasannya. Tidak ada standar warna tajwid yang universal — legenda ini pemetaan HijaLearn atas edisi tajwid AlQuran Cloud.
+            </p>
           </div>
         </div>
       )}
@@ -527,7 +620,11 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
       {/* Surah navigation */}
       <div className="flex gap-2 px-5 py-5">
         <button
-          onClick={() => prevSurah && onBack()}
+          onClick={() => {
+            if (prevSurah) {
+              window.dispatchEvent(new CustomEvent('navigate-surah', { detail: prevSurah.number }))
+            }
+          }}
           disabled={!prevSurah}
           className={`flex-1 text-[13px] font-bold p-3 bg-surface border border-line rounded-[4px] cursor-pointer text-ink-2 text-center transition-[border-color] duration-[120ms] hover:border-emerald ${
             !prevSurah ? 'opacity-30 cursor-default' : ''
@@ -562,8 +659,39 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
 
       {/* Footer */}
       <p className="px-5 pb-5 text-[10px] leading-[1.6] text-ink-4 text-center">
-        Teks Utsmani: Tanzil.net · Terjemahan: Kemenag RI
+        Teks ayat &amp; warna tajwid: edisi tajwid AlQuran Cloud · Terjemahan: Kemenag RI
       </p>
+
+      {/* Info hukum tajwid terpilih — dirender via portal ke body karena
+          wrapper layar membawa transform animasi yang mematahkan
+          position:fixed; posisi bawah ditulis inline agar calc valid. */}
+      {selectedRule && TAJWID_RULES[selectedRule] &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 'calc(76px + env(safe-area-inset-bottom))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '100%',
+              maxWidth: 430,
+              padding: '0 20px',
+              zIndex: 40,
+            }}
+          >
+            <div className="bg-surface border border-line rounded-[6px] shadow-[0_8px_30px_rgba(0,0,0,0.16)] p-[13px_14px] flex gap-[10px] items-start">
+              <span className="flex-none w-[14px] h-[14px] rounded-full mt-[3px]" style={{ backgroundColor: TAJWID_RULES[selectedRule].color }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-extrabold text-ink">{TAJWID_RULES[selectedRule].name}</div>
+                <p className="m-0 mt-[2px] text-[12.5px] leading-[1.55] text-ink-3">{TAJWID_RULES[selectedRule].desc}</p>
+              </div>
+              <button onClick={() => setSelectedRule(null)} className="flex-none bg-none border-none cursor-pointer text-ink-4 text-[15px] font-bold p-0" aria-label="Tutup info hukum">
+                ✕
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Click-outside handler for font picker */}
       {showFontPicker && (

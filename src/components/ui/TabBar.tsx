@@ -1,6 +1,6 @@
 'use client'
 
-export type TabId = 'beranda' | 'wawasan' | 'baca' | 'hasil-cari' | 'cek-klaim' | 'graf'
+export type TabId = 'beranda' | 'wawasan' | 'baca' | 'cek-klaim' | 'graf' | 'metodologi'
 
 interface TabBarProps {
   activeTab: TabId
@@ -64,9 +64,6 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
 ]
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps) {
-  // Map 'baca' tab highlight for both baca list and read views
-  const effectiveTab = activeTab === 'hasil-cari' ? activeTab : activeTab
-  
   return (
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-paper/94 backdrop-blur-[12px] border-t border-line grid grid-cols-5 z-10"
@@ -77,7 +74,7 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`bg-none border-none cursor-pointer flex flex-col items-center justify-center gap-[3px] text-[10px] font-bold pt-[6px] transition-colors duration-[120ms] ${
-            effectiveTab === tab.id ? 'text-emerald' : 'text-ink-4'
+            activeTab === tab.id ? 'text-emerald' : 'text-ink-4'
           }`}
         >
           {tab.icon}

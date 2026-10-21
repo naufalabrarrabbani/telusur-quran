@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { TabBar, type TabId } from '@/components/ui/TabBar'
 import { BerandaScreen } from '@/components/screens/BerandaScreen'
 import { WawasanScreen } from '@/components/screens/WawasanScreen'
-import { HasilCariScreen } from '@/components/screens/HasilCariScreen'
 import { CekKlaimScreen } from '@/components/screens/CekKlaimScreen'
 import { GrafScreen } from '@/components/screens/GrafScreen'
+import { MetodologiScreen } from '@/components/screens/MetodologiScreen'
 import { BacaListScreen } from '@/components/screens/BacaListScreen'
 import { BacaReadScreen } from '@/components/screens/BacaReadScreen'
 
@@ -15,8 +15,8 @@ type ScreenId = TabId | 'baca-read'
 export function AppShell() {
   const [activeTab, setActiveTab] = useState<TabId>('beranda')
   const [activeScreen, setActiveScreen] = useState<ScreenId>('beranda')
-  const [searchQuery, setSearchQuery] = useState<string>('setan')
   const [selectedSurah, setSelectedSurah] = useState<number | null>(null)
+  const [focusCardId, setFocusCardId] = useState<number | null>(null)
 
   const handleNavigate = (screen: string) => {
     const tabId = screen as TabId
@@ -28,11 +28,15 @@ export function AppShell() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Hasil pencarian = halaman mandiri (/cari?q=...), bukan layar tab.
   const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    setActiveTab('hasil-cari' as TabId)
-    setActiveScreen('hasil-cari')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.location.href = `/cari?q=${encodeURIComponent(query)}`
+  }
+
+  // Pintu Emosi di Beranda: pin kartu Wawasan tertentu sebagai featured.
+  const handleEmotion = (cardId: number) => {
+    setFocusCardId(cardId)
+    handleNavigate('wawasan')
   }
 
   const handleSelectSurah = useCallback((surahNo: number) => {
@@ -66,19 +70,19 @@ export function AppShell() {
     <div className="relative max-w-[430px] mx-auto min-h-dvh bg-paper border-x border-line-soft overflow-hidden">
       <main className="relative p-5 pb-[calc(64px+28px)]">
         <div className={activeScreen === 'beranda' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
-          <BerandaScreen onNavigate={handleNavigate} onSearch={handleSearch} />
+          <BerandaScreen onNavigate={handleNavigate} onSearch={handleSearch} onEmotion={handleEmotion} />
         </div>
         <div className={activeScreen === 'wawasan' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
-          <WawasanScreen onNavigate={handleNavigate} />
-        </div>
-        <div className={activeScreen === 'hasil-cari' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
-          <HasilCariScreen onNavigate={handleNavigate} searchQuery={searchQuery} onSearch={handleSearch} />
+          <WawasanScreen onNavigate={handleNavigate} onSearch={handleSearch} focusCardId={focusCardId} />
         </div>
         <div className={activeScreen === 'cek-klaim' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
           <CekKlaimScreen onNavigate={handleNavigate} onSearch={handleSearch} />
         </div>
         <div className={activeScreen === 'graf' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
-          <GrafScreen />
+          <GrafScreen onSearch={handleSearch} />
+        </div>
+        <div className={activeScreen === 'metodologi' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
+          <MetodologiScreen onNavigate={handleNavigate} />
         </div>
         <div className={activeScreen === 'baca' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
           <BacaListScreen onNavigate={handleNavigate} onSelectSurah={handleSelectSurah} />
@@ -89,7 +93,13 @@ export function AppShell() {
           </div>
         )}
       </main>
-      <TabBar activeTab={effectiveTab} onTabChange={handleNavigate} />
+      <TabBar
+        activeTab={effectiveTab}
+        onTabChange={(tab) => {
+          setFocusCardId(null)
+          handleNavigate(tab)
+        }}
+      />
     </div>
   )
 }

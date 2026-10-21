@@ -38,7 +38,7 @@ export function VerseCard({
         )}
       </div>
       <p
-        className="text-[23px] leading-[2.05] text-right text-ink m-0"
+        className="text-[23px] leading-[2.05] text-right text-ink m-0 [overflow-wrap:break-word]"
         style={{ fontFamily: 'Amiri, serif', direction: 'rtl', unicodeBidi: 'isolate' }}
         dangerouslySetInnerHTML={{ __html: arabic }}
       />

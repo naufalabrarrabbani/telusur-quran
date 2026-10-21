@@ -6,6 +6,7 @@ import {
   getSavedAyat,
   getReadSurahs,
   getStreak,
+  migrateLegacyBookmarks,
 } from '@/lib/quran-storage'
 
 interface SurahMeta {
@@ -57,6 +58,7 @@ export function BacaListScreen({ onNavigate, onSelectSurah }: BacaListScreenProp
   }, [])
 
   useEffect(() => {
+    migrateLegacyBookmarks()
     setLastReadState(getLastRead())
     setSavedAyat(getSavedAyat())
     setReadSurahsState(getReadSurahs())
@@ -92,6 +94,15 @@ export function BacaListScreen({ onNavigate, onSelectSurah }: BacaListScreenProp
     if (!lastRead) return null
     return surahs.find((s) => s.number === lastRead.surah) || null
   }, [lastRead, surahs])
+
+  // Surah pertama di tiap juz (dari data ayat) — untuk navigasi grid juz
+  const juzStartSurah = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const v of verses) {
+      if (!map.has(v.juz)) map.set(v.juz, v.surah_no)
+    }
+    return map
+  }, [verses])
 
   return (
     <div className="-mx-5 -mt-5">
@@ -324,6 +335,10 @@ export function BacaListScreen({ onNavigate, onSelectSurah }: BacaListScreenProp
               {Array.from({ length: 30 }, (_, i) => i + 1).map((juz) => (
                 <button
                   key={juz}
+                  onClick={() => {
+                    const s = juzStartSurah.get(juz)
+                    if (s) onSelectSurah(s)
+                  }}
                   className="text-[13px] font-bold text-center py-2.5 bg-surface border border-line rounded-[4px] cursor-pointer text-ink-2 transition-[border-color,color] duration-[120ms] hover:border-emerald hover:text-emerald"
                 >
                   {juz}
@@ -335,7 +350,7 @@ export function BacaListScreen({ onNavigate, onSelectSurah }: BacaListScreenProp
 
         {/* Footer */}
         <div className="mt-[26px] pt-3.5 border-t border-line-soft text-[11px] leading-[1.6] text-ink-4">
-          <strong className="text-ink-3">Sumber teks:</strong> Tanzil.net (Utsmani) · Terjemahan: Kemenag RI · Warna tajwid mengikuti standar mushaf Madinah.
+          <strong className="text-ink-3">Sumber teks:</strong> Tanzil.net (Utsmani) · Terjemahan: Kemenag RI · Warna tajwid: edisi tajwid AlQuran Cloud dengan legenda pemetaan HijaLearn (tidak ada standar warna yang universal).
         </div>
       </div>
     </div>
