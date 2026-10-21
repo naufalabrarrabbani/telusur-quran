@@ -10,6 +10,7 @@ const KEYS = {
   ARABIC_FONT_SIZE: 'tq_arabic_font_size',
   SHOW_TAJWID: 'tq_show_tajwid',
   SHOW_TRANSLATION: 'tq_show_translation',
+  AUTO_SCROLL_SPEED: 'tq_auto_scroll_speed',
 } as const
 
 function safeGet<T>(key: string, fallback: T): T {
@@ -159,6 +160,23 @@ export function getShowTajwid(): boolean {
 
 export function setShowTajwid(val: boolean): void {
   safeSet(KEYS.SHOW_TAJWID, val)
+}
+
+// Kecepatan auto-scroll ngaji (piksel per detik)
+export const AUTO_SCROLL_LEVELS = [
+  { px: 25, label: 'Sangat lambat' },
+  { px: 45, label: 'Lambat' },
+  { px: 70, label: 'Sedang' },
+  { px: 100, label: 'Cepat' },
+  { px: 140, label: 'Sangat cepat' },
+] as const
+
+export function getAutoScrollSpeed(): number {
+  return safeGet<number>(KEYS.AUTO_SCROLL_SPEED, 45)
+}
+
+export function setAutoScrollSpeed(px: number): void {
+  safeSet(KEYS.AUTO_SCROLL_SPEED, px)
 }
 
 // Translation visibility

@@ -18,6 +18,9 @@ import {
   getShowTranslation,
   setShowTranslation as saveShowTranslation,
   migrateLegacyBookmarks,
+  AUTO_SCROLL_LEVELS,
+  getAutoScrollSpeed,
+  setAutoScrollSpeed as saveAutoScrollSpeed,
 } from '@/lib/quran-storage'
 import {
   TAJWID_RULES,
@@ -106,6 +109,8 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
   const [tajwidData, setTajwidData] = useState<TajwidSurah | null>(null)
   const [selectedRule, setSelectedRule] = useState<string | null>(null)
   const [basmalah, setBasmalah] = useState<string | null>(null)
+  const [autoScroll, setAutoScroll] = useState(false)
+  const [speedIdx, setSpeedIdx] = useState(1) // indeks ke AUTO_SCROLL_LEVELS
   const verseListRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -141,6 +146,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
     let cancelled = false
     setTajwidData(null)
     setSelectedRule(null)
+    setAutoScroll(false)
     loadTajwidSurah(surahNo)
       .then((data) => {
         if (!cancelled) setTajwidData(data)
@@ -165,7 +171,57 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
     setArabicFontState(font)
     const fontDef = ARABIC_FONTS.find((f) => f.id === font)
     if (fontDef) loadFontCss(fontDef)
+    const savedSpeed = getAutoScrollSpeed()
+    const idx = AUTO_SCROLL_LEVELS.findIndex((l) => l.px === savedSpeed)
+    if (idx >= 0) setSpeedIdx(idx)
   }, [])
+
+  // Auto-scroll ngaji: gulir halus memakai requestAnimationFrame dengan
+  // posisi target terakumulasi (tidak macet di kecepatan lambat). Sentuhan
+  // atau roda mouse dari pengguna menghentikannya. Berhenti sendiri di
+  // ujung halaman.
+  useEffect(() => {
+    if (!autoScroll) return
+    const speedPx = AUTO_SCROLL_LEVELS[speedIdx].px
+    let raf = 0
+    let last = performance.now()
+    let targetY = window.scrollY
+    const step = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000)
+      last = now
+      // Sinkronkan bila posisi berubah dari luar loop (mis. lompatan jangkar)
+      if (Math.abs(window.scrollY - targetY) > 6) targetY = window.scrollY
+      targetY += speedPx * dt
+      const maxY = document.documentElement.scrollHeight - window.innerHeight
+      if (targetY >= maxY) {
+        window.scrollTo(0, maxY)
+        setAutoScroll(false)
+        return
+      }
+      window.scrollTo(0, targetY)
+      raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    const stop = () => setAutoScroll(false)
+    window.addEventListener('wheel', stop, { passive: true })
+    window.addEventListener('touchstart', stop, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('wheel', stop)
+      window.removeEventListener('touchstart', stop)
+    }
+  }, [autoScroll, speedIdx])
+
+  const stepSpeed = useCallback(
+    (delta: number) => {
+      setSpeedIdx((prev) => {
+        const next = Math.max(0, Math.min(AUTO_SCROLL_LEVELS.length - 1, prev + delta))
+        saveAutoScrollSpeed(AUTO_SCROLL_LEVELS[next].px)
+        return next
+      })
+    },
+    []
+  )
 
   // Build saved set
   useEffect(() => {
@@ -396,6 +452,43 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
           />
           Terjemah
         </button>
+
+        {/* Auto-scroll ngaji */}
+        <button
+          onClick={() => setAutoScroll((v) => !v)}
+          className={`text-[12px] font-bold px-3 py-[7px] rounded-[4px] border cursor-pointer flex items-center gap-[5px] transition-all duration-[120ms] ${
+            autoScroll
+              ? 'bg-emerald-deep text-white border-emerald-deep'
+              : 'bg-surface text-ink-3 border-line'
+          }`}
+          aria-pressed={autoScroll}
+        >
+          <span className="text-[10px]">{autoScroll ? '⏸' : '▶'}</span>
+          Gulir
+        </button>
+        {autoScroll && (
+          <div className="flex items-center border border-line rounded-[4px] overflow-hidden bg-surface">
+            <button
+              onClick={() => stepSpeed(-1)}
+              disabled={speedIdx === 0}
+              className="w-7 h-[30px] border-none bg-surface text-ink-3 cursor-pointer grid place-items-center text-[14px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
+              aria-label="Perlambat gulir"
+            >
+              −
+            </button>
+            <span className="text-[11px] font-bold text-ink-2 px-1 whitespace-nowrap tabular-nums">
+              {AUTO_SCROLL_LEVELS[speedIdx].label}
+            </span>
+            <button
+              onClick={() => stepSpeed(1)}
+              disabled={speedIdx === AUTO_SCROLL_LEVELS.length - 1}
+              className="w-7 h-[30px] border-none bg-surface text-ink-3 cursor-pointer grid place-items-center text-[14px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
+              aria-label="Percepat gulir"
+            >
+              +
+            </button>
+          </div>
+        )}
 
         {/* Font picker */}
         <div className="relative">

@@ -6,6 +6,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: '#0F4430',
 }
 
 const jakarta = Plus_Jakarta_Sans({
@@ -17,12 +18,33 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: 'Telusur Qur\'an — HijaLearn',
   description: 'Cari kata, tokoh, atau fakta di Al-Qur\'an. Semua ayat ketemu, semua angka ditampilkan dengan aturan hitungnya.',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Telusur Qur\'an',
+  },
   openGraph: {
     title: 'Telusur Qur\'an — HijaLearn',
     description: 'Mesin penelusuran Al-Qur\'an berbasis akar kata, graf entitas, dan galeri cek klaim.',
     siteName: 'Telusur Qur\'an',
     locale: 'id_ID',
     type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Telusur Qur\'an — HijaLearn',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/og-image.png'],
   },
 }
 

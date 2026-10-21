@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { HasilCariScreen } from '@/components/screens/HasilCariScreen'
+import { InstallBanner } from '@/components/ui/InstallBanner'
 
 // Halaman mandiri hasil pencarian (/cari?q=...) — sejak 22 Okt 2026 hasil
 // cari bukan tab lagi (slot tab-nya digantikan tab Baca). Query dibaca dari
@@ -31,6 +32,7 @@ export function CariPage() {
           Telusur Qur&apos;an — angka selalu ditampilkan bersama mode hitungnya. Teks ayat dari dataset Tanzil via AlQuran Cloud; terjemahan Kemenag RI.
         </footer>
       </main>
+      <InstallBanner withTabBar={false} />
     </div>
   )
 }

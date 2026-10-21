@@ -8,6 +8,7 @@ import { CekKlaimScreen } from '@/components/screens/CekKlaimScreen'
 import { GrafScreen } from '@/components/screens/GrafScreen'
 import { MetodologiScreen } from '@/components/screens/MetodologiScreen'
 import { BacaListScreen } from '@/components/screens/BacaListScreen'
+import { InstallBanner } from '@/components/ui/InstallBanner'
 import { BacaReadScreen } from '@/components/screens/BacaReadScreen'
 
 type ScreenId = TabId | 'baca-read'
@@ -100,6 +101,7 @@ export function AppShell() {
           handleNavigate(tab)
         }}
       />
+      <InstallBanner />
     </div>
   )
 }
