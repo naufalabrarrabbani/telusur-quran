@@ -1,6 +1,6 @@
 'use client'
 
-export type TabId = 'beranda' | 'wawasan' | 'hasil-cari' | 'cek-klaim' | 'graf'
+export type TabId = 'beranda' | 'wawasan' | 'baca' | 'hasil-cari' | 'cek-klaim' | 'graf'
 
 interface TabBarProps {
   activeTab: TabId
@@ -30,12 +30,12 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: 'hasil-cari',
-    label: 'Hasil Cari',
+    id: 'baca',
+    label: 'Baca',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="w-[22px] h-[22px]">
-        <circle cx={11} cy={11} r={7} />
-        <path d="M20 20l-3.8-3.8" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-[22px] h-[22px]">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
     ),
   },
@@ -64,6 +64,9 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
 ]
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps) {
+  // Map 'baca' tab highlight for both baca list and read views
+  const effectiveTab = activeTab === 'hasil-cari' ? activeTab : activeTab
+  
   return (
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-paper/94 backdrop-blur-[12px] border-t border-line grid grid-cols-5 z-10"
@@ -74,7 +77,7 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps) {
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`bg-none border-none cursor-pointer flex flex-col items-center justify-center gap-[3px] text-[10px] font-bold pt-[6px] transition-colors duration-[120ms] ${
-            activeTab === tab.id ? 'text-emerald' : 'text-ink-4'
+            effectiveTab === tab.id ? 'text-emerald' : 'text-ink-4'
           }`}
         >
           {tab.icon}
