@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { VerseCard } from '@/components/ui/VerseCard'
-import { search, highlightArabic, type SearchResult } from '@/lib/search'
-import { verses, wordIndex, getVerse, getSurah } from '@/lib/data'
+import { search, highlightArabic, type SearchResult, type Verse, type WordIndex, type SurahMeta } from '@/lib/search'
+import { loadData, getVerse, getSurah } from '@/lib/data'
 
 interface HasilCariScreenProps {
   onNavigate: (screen: string) => void
@@ -37,16 +37,56 @@ const modeBadge: Record<Mode, string> = {
 export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }: HasilCariScreenProps) {
   const [activeMode, setActiveMode] = useState<Mode>('lemma')
   const [showAll, setShowAll] = useState(false)
+  const [verses, setVerses] = useState<Verse[] | null>(null)
+  const [wordIndex, setWordIndex] = useState<WordIndex | null>(null)
+  const [surahMeta, setSurahMeta] = useState<SurahMeta[] | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const result: SearchResult = useMemo(() => {
+  useEffect(() => {
+    loadData().then((data) => {
+      setVerses(data.verses)
+      setWordIndex(data.wordIndex)
+      setSurahMeta(data.surahMeta)
+      setLoading(false)
+    })
+  }, [])
+
+  // Reset showAll when query changes
+  useEffect(() => {
+    setShowAll(false)
+  }, [searchQuery])
+
+  const result: SearchResult | null = useMemo(() => {
+    if (!verses || !wordIndex) return null
     return search(searchQuery, activeMode, verses, wordIndex)
-  }, [searchQuery, activeMode])
+  }, [searchQuery, activeMode, verses, wordIndex])
 
-  const displayVerseIds = showAll ? result.verseIds : result.verseIds.slice(0, 10)
+  const exactResult: SearchResult | null = useMemo(() => {
+    if (!verses || !wordIndex || !result || activeMode !== 'lemma' || !result.breakdown || result.breakdown.length <= 1) return null
+    return search(searchQuery, 'exact', verses, wordIndex)
+  }, [searchQuery, activeMode, verses, wordIndex, result])
+
+  if (loading || !result || !verses || !surahMeta) {
+    return (
+      <div>
+        <button
+          onClick={() => onNavigate('beranda')}
+          className="bg-none border-none cursor-pointer p-0 text-[13px] font-bold text-ink-4 inline-flex items-center gap-[5px] mb-3 hover:text-emerald"
+        >
+          ← Kembali
+        </button>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-[14px] text-ink-3 font-semibold">Memuat data Qur&apos;an...</div>
+        </div>
+      </div>
+    )
+  }
+
+  const displayVerseIds = showAll ? result.verseIds : result.verseIds.slice(0, 20)
 
   // Featured verse = first result
-  const featuredVerse = result.verseIds.length > 0 ? getVerse(result.verseIds[0]) : undefined
-  const featuredSurah = featuredVerse ? getSurah(featuredVerse.surah_no) : undefined
+  const featuredVerse = result.verseIds.length > 0 ? getVerse(verses, result.verseIds[0]) : undefined
+  const featuredSurah = featuredVerse ? getSurah(surahMeta, featuredVerse.surah_no) : undefined
 
   return (
     <div>
@@ -125,8 +165,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
       )}
 
       {/* Note strip — show if lemma has more than exact */}
-      {activeMode === 'lemma' && result.breakdown && result.breakdown.length > 1 && (() => {
-        const exactResult = search(searchQuery, 'exact', verses, wordIndex)
+      {activeMode === 'lemma' && exactResult && (() => {
         const diff = result.totalCount - exactResult.totalCount
         if (diff <= 0) return null
         return (
@@ -142,9 +181,9 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
       </div>
 
       {displayVerseIds.slice(featuredVerse ? 1 : 0).map((vid) => {
-        const v = getVerse(vid)
+        const v = getVerse(verses, vid)
         if (!v) return null
-        const s = getSurah(v.surah_no)
+        const s = getSurah(surahMeta, v.surah_no)
         return (
           <VerseCard
             key={vid}
@@ -157,7 +196,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
         )
       })}
 
-      {!showAll && result.verseIds.length > 10 && (
+      {!showAll && result.verseIds.length > 20 && (
         <button
           onClick={() => setShowAll(true)}
           className="mt-3 w-full text-[13px] font-bold bg-transparent text-emerald border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] hover:border-emerald"

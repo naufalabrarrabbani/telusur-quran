@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { StatusMarker } from '@/components/ui/StatusMarker'
-import { search } from '@/lib/search'
-import { verses, wordIndex } from '@/lib/data'
+import { search, type Verse, type WordIndex } from '@/lib/search'
+import { loadData } from '@/lib/data'
 
 interface CekKlaimScreenProps {
   onNavigate: (screen: string) => void
@@ -13,21 +13,58 @@ interface CekKlaimScreenProps {
 export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
   const [adamMode, setAdamMode] = useState<'exact' | 'contains'>('contains')
   const [verifyClicked, setVerifyClicked] = useState(false)
+  const [verses, setVerses] = useState<Verse[] | null>(null)
+  const [wordIndex, setWordIndex] = useState<WordIndex | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadData().then((data) => {
+      setVerses(data.verses)
+      setWordIndex(data.wordIndex)
+      setLoading(false)
+    })
+  }, [])
 
   // Real data: Adam & Isa counts
-  const adamResult = useMemo(() => search('adam', adamMode, verses, wordIndex), [adamMode])
-  const isaResult = useMemo(() => search('isa', adamMode, verses, wordIndex), [adamMode])
+  const adamResult = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return search('adam', adamMode, verses, wordIndex)
+  }, [adamMode, verses, wordIndex])
+  const isaResult = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return search('isa', adamMode, verses, wordIndex)
+  }, [adamMode, verses, wordIndex])
 
-  const adamN = adamResult.totalCount
-  const isaN = isaResult.totalCount
+  const adamN = adamResult?.totalCount ?? 0
+  const isaN = isaResult?.totalCount ?? 0
   const isSama = adamN === isaN
 
   // Real data: Setan (lemma)
-  const setanResult = useMemo(() => search('setan', 'lemma', verses, wordIndex), [])
+  const setanResult = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return search('setan', 'lemma', verses, wordIndex)
+  }, [verses, wordIndex])
 
   // Real data: Musa
-  const musaContains = useMemo(() => search('musa', 'contains', verses, wordIndex), [])
-  const musaExact = useMemo(() => search('musa', 'exact', verses, wordIndex), [])
+  const musaContains = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return search('musa', 'contains', verses, wordIndex)
+  }, [verses, wordIndex])
+  const musaExact = useMemo(() => {
+    if (!verses || !wordIndex) return null
+    return search('musa', 'exact', verses, wordIndex)
+  }, [verses, wordIndex])
+
+  if (loading || !verses || !wordIndex) {
+    return (
+      <div>
+        <h2 className="mt-[2px] mb-1 text-[20px] font-extrabold tracking-[-0.02em]">Cek Klaim</h2>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-[14px] text-ink-3 font-semibold">Memuat data Qur&apos;an...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -90,14 +127,14 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
         </p>
       </article>
 
-      {/* Setan 88x */}
+      {/* Setan */}
       <article className="bg-surface border border-line rounded-[6px] p-4 mb-[10px]">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="m-0 text-[16px] font-extrabold leading-[1.35]">Setan disebut {setanResult.totalCount} kali</h3>
+          <h3 className="m-0 text-[16px] font-extrabold leading-[1.35]">Setan disebut {setanResult?.totalCount ?? '...'} kali</h3>
           <StatusMarker status="lolos" label="LOLOS" />
         </div>
         <div className="flex items-baseline gap-[10px] mt-3">
-          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">{setanResult.totalCount}×</span>
+          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">{setanResult?.totalCount ?? '...'}×</span>
           <span className="text-[13px] text-ink-3 font-semibold leading-[1.45]">
             Mode <strong>Lemma</strong> — semua bentuk kata شيطان
           </span>
@@ -117,9 +154,9 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
           <StatusMarker status="bersyarat" label="LOLOS BERSYARAT" />
         </div>
         <div className="flex items-baseline gap-[10px] mt-3">
-          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">{musaContains.totalCount}×</span>
+          <span className="text-[36px] font-extrabold tracking-[-0.03em] text-emerald-deep leading-none">{musaContains?.totalCount ?? '...'}×</span>
           <span className="text-[13px] text-ink-3 font-semibold leading-[1.45]">
-            Benar jika dihitung <strong>termasuk awalan</strong> (و / ل / ب). Kata persisnya: <strong>{musaExact.totalCount}×</strong>.
+            Benar jika dihitung <strong>termasuk awalan</strong> (و / ل / ب). Kata persisnya: <strong>{musaExact?.totalCount ?? '...'}×</strong>.
           </span>
         </div>
       </article>

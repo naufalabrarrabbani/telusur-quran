@@ -1,18 +1,40 @@
-// Data loader — static JSON imports resolved at build time
+// Data loader — fetches JSON at runtime from /data/ (static assets in public/)
 
-import versesData from '@/data/verses.json'
-import wordIndexData from '@/data/word-index.json'
-import surahMetaData from '@/data/surah-meta.json'
 import type { Verse, WordIndex, SurahMeta } from '@/lib/search'
 
-export const verses: Verse[] = versesData as Verse[]
-export const wordIndex: WordIndex = wordIndexData as unknown as WordIndex
-export const surahMeta: SurahMeta[] = surahMetaData as SurahMeta[]
+interface QuranData {
+  verses: Verse[]
+  wordIndex: WordIndex
+  surahMeta: SurahMeta[]
+}
 
-export function getVerse(id: number): Verse | undefined {
+let cached: QuranData | null = null
+let loading: Promise<QuranData> | null = null
+
+export async function loadData(): Promise<QuranData> {
+  if (cached) return cached
+  if (loading) return loading
+
+  loading = (async () => {
+    const [versesRes, wordIndexRes, surahMetaRes] = await Promise.all([
+      fetch('/data/verses.json'),
+      fetch('/data/word-index.json'),
+      fetch('/data/surah-meta.json'),
+    ])
+    const verses = (await versesRes.json()) as Verse[]
+    const wordIndex = (await wordIndexRes.json()) as unknown as WordIndex
+    const surahMeta = (await surahMetaRes.json()) as SurahMeta[]
+    cached = { verses, wordIndex, surahMeta }
+    return cached
+  })()
+
+  return loading
+}
+
+export function getVerse(verses: Verse[], id: number): Verse | undefined {
   return verses[id]
 }
 
-export function getSurah(surahNo: number): SurahMeta | undefined {
+export function getSurah(surahMeta: SurahMeta[], surahNo: number): SurahMeta | undefined {
   return surahMeta.find(s => s.number === surahNo)
 }
