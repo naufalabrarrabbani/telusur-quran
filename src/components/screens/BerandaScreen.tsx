@@ -1,6 +1,7 @@
 'use client'
 
 import { StatusMarker } from '@/components/ui/StatusMarker'
+import { usePwaInstall, promptPwaInstall, reopenPwaBanner } from '@/lib/pwa-install'
 
 interface BerandaScreenProps {
   onNavigate: (screen: string) => void
@@ -30,6 +31,19 @@ const tags = [
 ]
 
 export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreenProps) {
+  const pwa = usePwaInstall()
+  // Setelah banner install ditutup, opsi install pindah ke tombol kecil
+  // pojok kanan atas sini — tidak hilang selamanya.
+  const showInstallCorner = !pwa.installed && pwa.dismissed
+  const handleInstallCorner = async () => {
+    if (pwa.deferred) {
+      await promptPwaInstall()
+    } else {
+      // iOS / prompt belum tersedia: tampilkan lagi banner instruksinya
+      reopenPwaBanner()
+    }
+  }
+
   const handleSearch = (q: string) => {
     const trimmed = q.trim()
     if (!trimmed) return
@@ -56,6 +70,20 @@ export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreen
           </h1>
           <small className="block text-[10px] font-bold tracking-[0.12em] text-ink-4 mt-[1px] uppercase">by HijaLearn</small>
         </div>
+        {showInstallCorner && (
+          <button
+            onClick={handleInstallCorner}
+            className="ml-auto flex-none flex items-center gap-[5px] text-[11px] font-extrabold text-emerald-deep bg-emerald/8 border border-emerald/25 rounded-full px-[11px] py-[7px] cursor-pointer hover:border-emerald transition-colors"
+            aria-label="Pasang Telusur Qur'an sebagai aplikasi"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 4v11" />
+              <path d="M7 11l5 5 5-5" />
+              <path d="M4 20h16" />
+            </svg>
+            Instal App
+          </button>
+        )}
       </div>
 
       <p className="mt-[14px] text-[16px] leading-[1.6] text-ink-2 font-medium">

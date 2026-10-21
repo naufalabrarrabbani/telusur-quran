@@ -1,13 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
-
-const DISMISS_KEY = 'tq:pwa-dismissed'
+import {
+  usePwaInstall,
+  dismissPwaBanner,
+  promptPwaInstall,
+} from '@/lib/pwa-install'
 
 interface InstallBannerProps {
   /** true bila halaman punya TabBar di bawah (app shell); false untuk /cari */
@@ -17,53 +14,13 @@ interface InstallBannerProps {
 // Banner CTA memasang PWA. Android/Chrome: memakai event
 // beforeinstallprompt asli. iOS Safari tidak punya event itu — tampilkan
 // instruksi manual (Bagikan -> Tambah ke Layar Utama). Tidak tampil bila
-// sudah terpasang (display-mode standalone) atau pernah ditutup.
+// sudah terpasang atau pernah ditutup (sebagai gantinya muncul tombol
+// install kecil di pojok kanan atas Beranda).
 export function InstallBanner({ withTabBar = true }: InstallBannerProps) {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isIOS, setIsIOS] = useState(false)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true
-    if (standalone) return
-    try {
-      if (localStorage.getItem(DISMISS_KEY)) return
-    } catch {
-      // abaikan
-    }
-    if (/iphone|ipad|ipod/i.test(window.navigator.userAgent)) {
-      setIsIOS(true)
-      setVisible(true)
-      return
-    }
-    const handler = (e: Event) => {
-      e.preventDefault()
-      setDeferred(e as BeforeInstallPromptEvent)
-      setVisible(true)
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
+  const pwa = usePwaInstall()
+  const visible = !pwa.installed && !pwa.dismissed && (pwa.deferred !== null || pwa.isIOS)
 
   if (!visible) return null
-
-  const dismiss = () => {
-    setVisible(false)
-    try {
-      localStorage.setItem(DISMISS_KEY, '1')
-    } catch {
-      // abaikan
-    }
-  }
-
-  const install = async () => {
-    if (!deferred) return
-    await deferred.prompt()
-    const choice = await deferred.userChoice
-    if (choice.outcome === 'accepted') dismiss()
-  }
 
   return (
     <div
@@ -87,7 +44,7 @@ export function InstallBanner({ withTabBar = true }: InstallBannerProps) {
         />
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-extrabold leading-[1.3]">Pasang jadi aplikasi 📲</div>
-          {isIOS ? (
+          {pwa.isIOS ? (
             <p className="m-0 mt-[2px] text-[12px] leading-[1.5] text-white/75">
               Ketuk ikon{' '}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="inline-block align-[-1px]">
@@ -104,16 +61,16 @@ export function InstallBanner({ withTabBar = true }: InstallBannerProps) {
             </p>
           )}
         </div>
-        {!isIOS && deferred && (
+        {!pwa.isIOS && pwa.deferred && (
           <button
-            onClick={install}
+            onClick={promptPwaInstall}
             className="flex-none bg-gold-light text-emerald-deep border-none rounded-[6px] px-[13px] py-[8px] text-[12.5px] font-extrabold cursor-pointer"
           >
             Instal
           </button>
         )}
         <button
-          onClick={dismiss}
+          onClick={dismissPwaBanner}
           aria-label="Tutup banner instal"
           className="flex-none self-start bg-none border-none cursor-pointer text-white/60 hover:text-white text-[14px] font-bold p-0 leading-none"
         >
