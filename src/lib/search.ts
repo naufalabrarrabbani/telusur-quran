@@ -83,7 +83,7 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'quran':    { primary: ['القرآن'], contains: 'قرآن', lemmaRoot: 'قرآن' },
   'malaikat': { primary: ['الملائكة'], contains: 'ملائك', lemmaRoot: 'ملائك' },
   'surga':    { primary: ['الجنة'], contains: 'جنة', lemmaRoot: 'جنة|جنات', lemmaForms: ['جنات', 'الجنة', 'جنة', 'وجنات', 'وجنة', 'بالجنة', 'الجنات'] },
-  'neraka':   { primary: ['النار'], contains: 'نار', lemmaRoot: 'نار' },
+  'neraka':   { primary: ['النار'], contains: 'نار', lemmaRoot: 'نار', lemmaForms: ['النار', 'نار', 'نارا', 'فالنار', 'والنار'] },
   'ibrahim':  { primary: ['إبراهيم'], contains: 'براهيم', lemmaRoot: 'براهيم' },
   'yusuf':    { primary: ['يوسف'], contains: 'يوسف', lemmaRoot: 'يوسف' },
   'nuh':      { primary: ['نوح'], contains: 'نوح', lemmaRoot: 'نوح', lemmaForms: ['نوح', 'نوحا', 'ونوحا'] },
