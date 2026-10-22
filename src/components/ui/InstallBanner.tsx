@@ -5,6 +5,7 @@ import {
   dismissPwaBanner,
   promptPwaInstall,
 } from '@/lib/pwa-install'
+import { UiIcon } from '@/components/ui/UiIcon'
 
 interface InstallBannerProps {
   /** true bila halaman punya TabBar di bawah (app shell); false untuk /cari */
@@ -43,7 +44,7 @@ export function InstallBanner({ withTabBar = true }: InstallBannerProps) {
           className="flex-none w-[38px] h-[38px] bg-paper rounded-[9px] p-[5px]"
         />
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-extrabold leading-[1.3]">Pasang jadi aplikasi 📲</div>
+          <div className="text-[13px] font-extrabold leading-[1.3]">Pasang jadi aplikasi <UiIcon name="download-white" size={14} className="align-[-2px] ml-[3px]" /></div>
           {pwa.isIOS ? (
             <p className="m-0 mt-[2px] text-[12px] leading-[1.5] text-white/75">
               Ketuk ikon{' '}
@@ -72,9 +73,9 @@ export function InstallBanner({ withTabBar = true }: InstallBannerProps) {
         <button
           onClick={dismissPwaBanner}
           aria-label="Tutup banner instal"
-          className="flex-none self-start bg-none border-none cursor-pointer text-white/60 hover:text-white text-[14px] font-bold p-0 leading-none"
+          className="flex-none self-start bg-none border-none cursor-pointer p-0 leading-none opacity-70 hover:opacity-100 transition-opacity"
         >
-          ✕
+          <UiIcon name="close-white" size={13} />
         </button>
       </div>
     </div>

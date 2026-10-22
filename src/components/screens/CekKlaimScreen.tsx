@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { StatusMarker } from '@/components/ui/StatusMarker'
+import { UiIcon } from '@/components/ui/UiIcon'
 import { search, searchExact, type Verse, type WordIndex } from '@/lib/search'
 import { loadData } from '@/lib/data'
 
@@ -114,7 +115,7 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
           </div>
         </div>
         <div className={`text-center text-[17px] font-extrabold tracking-[0.01em] mt-2 mb-[2px] min-h-[24px] transition-colors duration-150 ${isSama ? 'text-green' : 'text-red'}`}>
-          {isSama ? 'SAMA! ✓' : 'NGGAK SAMA ✕'}
+          {isSama ? <>SAMA! <UiIcon name="check-green" size={16} className="align-[-2px]" /></> : <>NGGAK SAMA <UiIcon name="cross-red" size={15} className="align-[-2px]" /></>}
         </div>
         <div className="flex bg-paper-warm border border-line rounded-[6px] p-[3px] gap-[3px] mt-3" role="group" aria-label="Mode hitung Adam Isa">
           <button

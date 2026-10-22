@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { VerseCard } from '@/components/ui/VerseCard'
+import { UiIcon } from '@/components/ui/UiIcon'
 import { search, highlightArabic, matchedTokensByVerse, type SearchResult, type Verse, type WordIndex, type SurahMeta } from '@/lib/search'
 import { loadData, getVerse, getSurah } from '@/lib/data'
 
@@ -78,7 +79,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
           onClick={() => onNavigate('beranda')}
           className="bg-none border-none cursor-pointer p-0 text-[13px] font-bold text-ink-4 inline-flex items-center gap-[5px] mb-3 hover:text-emerald"
         >
-          ← Kembali
+          <UiIcon name="back-grey" size={13} /> Kembali
         </button>
         <div className="flex items-center justify-center py-20">
           <div className="text-[14px] text-ink-3 font-semibold">Memuat data Qur&apos;an...</div>
@@ -99,7 +100,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
         onClick={() => onNavigate('beranda')}
         className="bg-none border-none cursor-pointer p-0 text-[13px] font-bold text-ink-4 inline-flex items-center gap-[5px] mb-3 hover:text-emerald"
       >
-        ← Kembali
+        <UiIcon name="back-grey" size={13} /> Kembali
       </button>
 
       <p className="text-[13px] text-ink-3 font-semibold mb-1">

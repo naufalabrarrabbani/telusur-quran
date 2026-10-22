@@ -6,7 +6,7 @@
 // `next build` — lokal maupun di Vercel. Idempoten.
 // Regenerasi .b64 setelah mengganti aset: node scripts/build-icons.mjs
 // lalu base64-kan hasilnya (lihat daftar pasangan di bawah).
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 const PAIRS = [
@@ -18,6 +18,22 @@ const PAIRS = [
   ['assets-b64/app-icon.png.b64', 'src/app/icon.png'],
   ['assets-b64/favicon.ico.b64', 'src/app/favicon.ico'],
 ]
+
+// Konvensi folder: semua assets-b64/ui/<nama>.png.b64 → public/icons/ui/<nama>.png
+// (ikon antarmuka Icons8 yang diwarnai mengikuti palet aplikasi — lihat
+// src/components/ui/UiIcon.tsx). Tambah ikon cukup jatuhkan .b64 baru di sana.
+try {
+  for (const f of readdirSync('assets-b64/ui')) {
+    if (!f.endsWith('.png.b64')) continue
+    const dest = `public/icons/ui/${f.slice(0, -4)}`
+    const b64 = readFileSync(`assets-b64/ui/${f}`, 'utf8').replace(/\s+/g, '')
+    mkdirSync(dirname(dest), { recursive: true })
+    writeFileSync(dest, Buffer.from(b64, 'base64'))
+    console.log('decode ui', f, '->', dest)
+  }
+} catch (e) {
+  console.warn('lewati folder ui -', e.message)
+}
 
 for (const [src, dest] of PAIRS) {
   try {

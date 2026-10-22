@@ -1,6 +1,7 @@
 'use client'
 
 import { StatusMarker } from '@/components/ui/StatusMarker'
+import { UiIcon } from '@/components/ui/UiIcon'
 import { usePwaInstall, promptPwaInstall, reopenPwaBanner } from '@/lib/pwa-install'
 
 interface BerandaScreenProps {
@@ -202,7 +203,7 @@ export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreen
       </div>
       <button onClick={() => onNavigate('baca')} className="mt-[10px] bg-surface border border-line rounded-[6px] p-4 cursor-pointer text-left w-full transition-[border-color] duration-[120ms] hover:border-emerald">
         <p className="m-0 text-[15px] font-extrabold text-ink">
-          Baca dengan warna tajwid 🎨
+          Baca dengan warna tajwid <UiIcon name="palette-deep" size={15} className="align-[-2px] ml-[3px]" />
         </p>
         <p className="mt-[4px] mb-0 text-[13px] leading-[1.55] text-ink-3">
           Tiap warna ada hukumnya — ikhfa, idgham, madd, qalqalah — dan tanda berhenti pun berwarna. Ketuk hurufnya untuk tahu artinya, simpan ayat favoritmu dengan bintang.

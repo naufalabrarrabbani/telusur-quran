@@ -1,5 +1,7 @@
 'use client'
 
+import { UiIcon } from '@/components/ui/UiIcon'
+
 interface MetodologiScreenProps {
   onNavigate: (screen: string) => void
 }
@@ -46,7 +48,7 @@ export function MetodologiScreen({ onNavigate }: MetodologiScreenProps) {
         onClick={() => onNavigate('beranda')}
         className="bg-none border-none cursor-pointer text-[12px] font-bold text-emerald p-0 mb-3"
       >
-        ← Beranda
+        <UiIcon name="back-emerald" size={12} className="mr-[5px] align-[-1px]" />Beranda
       </button>
       <h2 className="mt-[2px] mb-1 text-[20px] font-extrabold tracking-[-0.02em]">Metodologi &amp; Sumber</h2>
       <p className="mb-[18px] text-[13px] leading-[1.6] text-ink-3">
@@ -107,6 +109,7 @@ export function MetodologiScreen({ onNavigate }: MetodologiScreenProps) {
         <li><strong className="text-ink-2">Tafsir &amp; konteks:</strong> Tafsir Kemenag, Tafsir Al-Mishbah (M. Quraish Shihab), Tafsir Ibnu Katsir.</li>
         <li><strong className="text-ink-2">Asbabun nuzul:</strong> Al-Wahidi; Lubab an-Nuqul karya As-Suyuthi.</li>
         <li><strong className="text-ink-2">Konkordansi:</strong> Al-Mu&apos;jam al-Mufahras li Alfazh al-Qur&apos;an (Muhammad Fuad Abdul Baqi).</li>
+        <li><strong className="text-ink-2">Ikon antarmuka:</strong> <a href="https://icons8.com" target="_blank" rel="noreferrer" className="font-semibold text-emerald underline decoration-emerald/30 underline-offset-2">Icons8</a> (set Material Rounded), diwarnai mengikuti palet aplikasi.</li>
       </ul>
       <p className="mt-2 mb-0 text-[13px] leading-[1.7] text-ink-3">
         Konteks yang bersumber dari riwayat yang diperselisihkan selalu dilabeli di kartunya — riwayat masyhur tidak pernah kami sajikan sebagai kepastian.

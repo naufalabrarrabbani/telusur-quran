@@ -1,3 +1,5 @@
+import { UiIcon } from '@/components/ui/UiIcon'
+
 interface VerseCardProps {
   surah: string
   ayahRef: string
@@ -26,7 +28,7 @@ export function VerseCard({
     <article className={`${baseClasses} ${featuredClasses}`}>
       {featured && (
         <div className="flex items-center gap-[6px] text-[11px] font-extrabold tracking-[0.04em] text-emerald uppercase mb-[10px]">
-          ★ Ayat Unggulan
+          <UiIcon name="star-emerald" size={12} /> Ayat Unggulan
         </div>
       )}
       <div className="flex justify-between items-center mb-[10px]">

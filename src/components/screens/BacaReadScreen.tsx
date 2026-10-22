@@ -29,6 +29,7 @@ import {
   loadTajwidSurah,
   type TajwidSurah,
 } from '@/lib/tajwid'
+import { UiIcon } from '@/components/ui/UiIcon'
 
 interface SurahMeta {
   number: number
@@ -420,7 +421,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
             onClick={onBack}
             className="bg-transparent border-none cursor-pointer text-white/60 text-[13px] font-bold flex items-center gap-1 p-0 hover:text-white transition-colors"
           >
-            ← Daftar Surah
+            <UiIcon name="back-white" size={13} className="opacity-70" /> Daftar Surah
           </button>
         </div>
         <div className="flex justify-between items-start">
@@ -500,7 +501,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                   }`}
                 >
                   {f.label}
-                  {arabicFont === f.id && <span className="ml-2 text-emerald">✓</span>}
+                  {arabicFont === f.id && <UiIcon name="check-green" size={12} className="ml-2 align-[-1px]" />}
                 </button>
               ))}
             </div>
@@ -709,8 +710,8 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
             !prevSurah ? 'opacity-30 cursor-default' : ''
           }`}
         >
-          <span className="text-[10px] font-extrabold text-ink-4 uppercase tracking-[0.06em] block mb-0.5">
-            ← Sebelumnya
+          <span className="text-[10px] font-extrabold text-ink-4 uppercase tracking-[0.06em] flex items-center justify-center gap-[3px] mb-0.5">
+            <UiIcon name="back-grey" size={10} /> Sebelumnya
           </span>
           {prevSurah?.name_latin || '—'}
         </button>
@@ -729,8 +730,8 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
             !nextSurah ? 'opacity-30 cursor-default' : ''
           }`}
         >
-          <span className="text-[10px] font-extrabold text-ink-4 uppercase tracking-[0.06em] block mb-0.5">
-            Selanjutnya →
+          <span className="text-[10px] font-extrabold text-ink-4 uppercase tracking-[0.06em] flex items-center justify-center gap-[3px] mb-0.5">
+            Selanjutnya <UiIcon name="forward-grey" size={10} />
           </span>
           {nextSurah?.name_latin || '—'}
         </button>
@@ -764,8 +765,8 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                 <div className="text-[13px] font-extrabold text-ink">{TAJWID_RULES[selectedRule].name}</div>
                 <p className="m-0 mt-[2px] text-[12.5px] leading-[1.55] text-ink-3">{TAJWID_RULES[selectedRule].desc}</p>
               </div>
-              <button onClick={() => setSelectedRule(null)} className="flex-none bg-none border-none cursor-pointer text-ink-4 text-[15px] font-bold p-0" aria-label="Tutup info hukum">
-                ✕
+              <button onClick={() => setSelectedRule(null)} className="flex-none bg-none border-none cursor-pointer p-0 leading-none" aria-label="Tutup info hukum">
+                <UiIcon name="close-grey" size={13} />
               </button>
             </div>
           </div>,
@@ -798,7 +799,7 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                   : 'bg-paper-warm text-ink-3 border-line'
               }`}
             >
-              {autoScroll ? '⏸' : '▶'}
+              {autoScroll ? <UiIcon name="pause-white" size={13} /> : <UiIcon name="play-deep" size={13} />}
             </button>
             {autoScroll && (
               <>
@@ -806,9 +807,9 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                   onClick={() => stepSpeed(1)}
                   disabled={speedIdx === AUTO_SCROLL_LEVELS.length - 1}
                   aria-label="Percepat gulir"
-                  className="w-9 h-8 rounded-full border-none bg-transparent text-ink-2 cursor-pointer grid place-items-center text-[16px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
+                  className="w-9 h-8 rounded-full border-none bg-transparent cursor-pointer grid place-items-center transition-colors hover:bg-paper-warm disabled:opacity-30"
                 >
-                  +
+                  <UiIcon name="plus-ink" size={15} />
                 </button>
                 <span className="max-w-[40px] text-center text-[8.5px] font-bold leading-[1.15] text-ink-3">
                   {AUTO_SCROLL_LEVELS[speedIdx].label}
@@ -817,9 +818,9 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                   onClick={() => stepSpeed(-1)}
                   disabled={speedIdx === 0}
                   aria-label="Perlambat gulir"
-                  className="w-9 h-8 rounded-full border-none bg-transparent text-ink-2 cursor-pointer grid place-items-center text-[16px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
+                  className="w-9 h-8 rounded-full border-none bg-transparent cursor-pointer grid place-items-center transition-colors hover:bg-paper-warm disabled:opacity-30"
                 >
-                  −
+                  <UiIcon name="minus-ink" size={15} />
                 </button>
               </>
             )}
