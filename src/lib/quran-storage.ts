@@ -33,6 +33,18 @@ function safeSet(key: string, value: unknown): void {
   }
 }
 
+// Notifikasi perubahan data baca (bookmark, terakhir dibaca, streak, surah
+// terbaca). Layar-layar di app ini tetap ter-mount walau disembunyikan, jadi
+// pembaca state lokal harus tahu kapan harus membaca ulang — tanpa ini,
+// bookmark yang baru disimpan di layar Baca tidak muncul di daftar sampai
+// aplikasi dimuat ulang penuh.
+export const STORAGE_CHANGED_EVENT = 'tq:storage-changed'
+
+function notifyChanged(): void {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(STORAGE_CHANGED_EVENT))
+}
+
 // Last read position
 export function getLastRead(): { surah: number; ayat: number } | null {
   return safeGet<{ surah: number; ayat: number } | null>(KEYS.LAST_READ, null)
@@ -40,6 +52,7 @@ export function getLastRead(): { surah: number; ayat: number } | null {
 
 export function setLastRead(surah: number, ayat: number): void {
   safeSet(KEYS.LAST_READ, { surah, ayat })
+  notifyChanged()
 }
 
 // Saved ayat (bookmarks)
@@ -50,15 +63,17 @@ export function getSavedAyat(): { surah: number; ayat: number }[] {
 export function toggleSavedAyat(surah: number, ayat: number): boolean {
   const saved = getSavedAyat()
   const idx = saved.findIndex((s) => s.surah === surah && s.ayat === ayat)
+  let nowSaved: boolean
   if (idx >= 0) {
     saved.splice(idx, 1)
-    safeSet(KEYS.SAVED_AYAT, saved)
-    return false
+    nowSaved = false
   } else {
     saved.push({ surah, ayat })
-    safeSet(KEYS.SAVED_AYAT, saved)
-    return true
+    nowSaved = true
   }
+  safeSet(KEYS.SAVED_AYAT, saved)
+  notifyChanged()
+  return nowSaved
 }
 
 export function isSavedAyat(surah: number, ayat: number): boolean {
@@ -75,6 +90,7 @@ export function markSurahRead(surah: number): void {
   if (!read.includes(surah)) {
     read.push(surah)
     safeSet(KEYS.READ_SURAHS, read)
+    notifyChanged()
   }
 }
 
@@ -103,6 +119,7 @@ export function updateStreak(): void {
     safeSet(KEYS.STREAK, 1)
   }
   safeSet(KEYS.STREAK_DATE, today)
+  notifyChanged()
 }
 
 // Migrasi satu kali dari penyimpanan BacaScreen lama (Fase 5A, kunci 'tq:*')

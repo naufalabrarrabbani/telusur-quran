@@ -7,6 +7,7 @@ import {
   getReadSurahs,
   getStreak,
   migrateLegacyBookmarks,
+  STORAGE_CHANGED_EVENT,
 } from '@/lib/quran-storage'
 
 interface SurahMeta {
@@ -57,12 +58,30 @@ export function BacaListScreen({ onNavigate, onSelectSurah }: BacaListScreenProp
       .catch(() => {})
   }, [])
 
+  // Data lokal dibaca ulang: saat mount, setiap ada perubahan storage
+  // (event dari quran-storage), dan setiap layar ini kembali terlihat/fokus.
+  // Layar tetap ter-mount walau disembunyikan, jadi tanpa ini bookmark baru
+  // dari layar Baca tidak muncul sampai aplikasi dimuat ulang penuh.
   useEffect(() => {
-    migrateLegacyBookmarks()
-    setLastReadState(getLastRead())
-    setSavedAyat(getSavedAyat())
-    setReadSurahsState(getReadSurahs())
-    setStreakState(getStreak())
+    const refresh = () => {
+      migrateLegacyBookmarks()
+      setLastReadState(getLastRead())
+      setSavedAyat(getSavedAyat())
+      setReadSurahsState(getReadSurahs())
+      setStreakState(getStreak())
+    }
+    refresh()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener(STORAGE_CHANGED_EVENT, refresh)
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener(STORAGE_CHANGED_EVENT, refresh)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   const filteredSurahs = useMemo(() => {
