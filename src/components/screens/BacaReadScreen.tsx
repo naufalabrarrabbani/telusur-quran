@@ -105,6 +105,13 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
   const [fontSize, setFontSize] = useState(28)
   const [arabicFont, setArabicFontState] = useState('Amiri')
   const [showFontPicker, setShowFontPicker] = useState(false)
+  const [fontMenuPos, setFontMenuPos] = useState<{ top: number; left: number } | null>(null)
+  const fontBtnRef = useRef<HTMLButtonElement>(null)
+  const [showFind, setShowFind] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [flashAyah, setFlashAyah] = useState<number | null>(null)
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const findInputRef = useRef<HTMLInputElement>(null)
   const [progress, setProgress] = useState(0)
   const [copied, setCopied] = useState<number | null>(null)
   const [tajwidData, setTajwidData] = useState<TajwidSurah | null>(null)
@@ -343,8 +350,45 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
     saveArabicFont(fontId)
     const fontDef = ARABIC_FONTS.find((f) => f.id === fontId)
     if (fontDef) loadFontCss(fontDef)
+    try {
+      // Paksa berkas fontnya (subset Arab + harakat) selesai dimuat
+      document.fonts?.load(`28px "${fontId}"`, 'بِسْمِ ٱللَّهِ').catch(() => {})
+    } catch {
+      // abaikan
+    }
     setShowFontPicker(false)
   }, [])
+
+  // Loncat ke ayat tertentu di surah ini + sorot sesaat supaya mata
+  // langsung menemukannya. Gulir otomatis dimatikan bila sedang jalan.
+  const jumpToAyah = useCallback((n: number) => {
+    setAutoScroll(false)
+    const el = document.getElementById(`verse-${n}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setActiveVerse(n)
+    setFlashAyah(n)
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current)
+    flashTimeoutRef.current = setTimeout(() => setFlashAyah(null), 2400)
+  }, [])
+
+  // Cari di dalam surah: angka murni = nomor ayat tujuan; teks = cocokkan
+  // ke terjemahan ayat-ayat surah ini.
+  const findTrim = findQuery.trim()
+  const findNumber = /^\d+$/.test(findTrim) ? parseInt(findTrim, 10) : null
+  const findResults = useMemo(() => {
+    if (findNumber !== null || findTrim.length < 2) return []
+    const q = findTrim.toLowerCase()
+    return verses.filter((v) => v.translation_id.toLowerCase().includes(q)).slice(0, 8)
+  }, [verses, findTrim, findNumber])
+
+  const findSnippet = (text: string, q: string) => {
+    const i = text.toLowerCase().indexOf(q.toLowerCase())
+    if (i < 0) return text.slice(0, 110)
+    const start = Math.max(0, i - 34)
+    const end = Math.min(text.length, i + q.length + 62)
+    return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`
+  }
 
   const handleFontSizeUp = useCallback(() => {
     setFontSize((prev) => {
@@ -473,14 +517,57 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
           Terjemah
         </button>
 
+        <button
+          onClick={() => {
+            setShowFind((s) => !s)
+            setTimeout(() => findInputRef.current?.focus(), 60)
+          }}
+          className={`text-[12px] font-bold px-3 py-[7px] rounded-[4px] border cursor-pointer flex items-center gap-[5px] transition-all duration-[120ms] ${
+            showFind
+              ? 'bg-emerald-deep text-white border-emerald-deep'
+              : 'bg-surface text-ink-3 border-line'
+          }`}
+        >
+          <UiIcon name={showFind ? 'search-white' : 'search-ink'} size={12} />
+          Cari ayat
+        </button>
+
         {/* Kontrol gulir otomatis pindah ke dock sticky di sisi kiri layar
             (dirender via portal di bawah) — bisa dijangkau sambil membaca,
             tanpa harus kembali ke atas. */}
 
-        {/* Font picker */}
+        {/* Font picker — menunya dirender via portal ke body + backdrop:
+            dropdown absolute di dalam strip sticky ini opsinya pernah
+            tertutup elemen lain (klik/sentuhan tidak mendarat di opsi,
+            terverifikasi di uji browser), portal menghilangkan kelas
+            masalah itu. Saat menu dibuka semua font dihangatkan
+            (CSS + berkas font Arab) supaya pergantian terasa seketika,
+            bukan tertunda unduhan yang tampak seperti "tidak berubah". */}
         <div className="relative">
           <button
-            onClick={() => setShowFontPicker(!showFontPicker)}
+            ref={fontBtnRef}
+            onClick={() => {
+              if (showFontPicker) {
+                setShowFontPicker(false)
+                return
+              }
+              const r = fontBtnRef.current?.getBoundingClientRect()
+              if (r) {
+                setFontMenuPos({
+                  top: r.bottom + 4,
+                  left: Math.max(8, Math.min(r.left, window.innerWidth - 196)),
+                })
+              }
+              ARABIC_FONTS.forEach((f) => {
+                loadFontCss(f)
+                try {
+                  document.fonts?.load(`20px "${f.id}"`, 'بسم الله').catch(() => {})
+                } catch {
+                  // abaikan — pemanasan hanya optimasi
+                }
+              })
+              setShowFontPicker(true)
+            }}
             className="text-[12px] font-bold px-3 py-[7px] rounded-[4px] border border-line bg-surface text-ink-3 cursor-pointer flex items-center gap-1.5 transition-all duration-[120ms] hover:border-emerald"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -488,24 +575,37 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
             </svg>
             {ARABIC_FONTS.find(f => f.id === arabicFont)?.label || 'Font'}
           </button>
-          {showFontPicker && (
-            <div className="absolute top-full left-0 mt-1 bg-surface border border-line rounded-[6px] shadow-lg z-20 min-w-[180px]">
-              {ARABIC_FONTS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => handleFontChange(f.id)}
-                  className={`w-full text-left text-[12px] font-semibold px-3 py-2.5 cursor-pointer border-none transition-colors first:rounded-t-[6px] last:rounded-b-[6px] ${
-                    arabicFont === f.id
-                      ? 'bg-emerald/6 text-emerald-deep'
-                      : 'bg-surface text-ink-2 hover:bg-paper-warm'
-                  }`}
+          {showFontPicker &&
+            fontMenuPos &&
+            createPortal(
+              <>
+                <div
+                  className="fixed inset-0"
+                  style={{ zIndex: 60 }}
+                  onClick={() => setShowFontPicker(false)}
+                />
+                <div
+                  className="fixed bg-surface border border-line rounded-[6px] shadow-lg min-w-[180px]"
+                  style={{ zIndex: 61, top: fontMenuPos.top, left: fontMenuPos.left }}
                 >
-                  {f.label}
-                  {arabicFont === f.id && <UiIcon name="check-green" size={12} className="ml-2 align-[-1px]" />}
-                </button>
-              ))}
-            </div>
-          )}
+                  {ARABIC_FONTS.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => handleFontChange(f.id)}
+                      className={`w-full text-left text-[12px] font-semibold px-3 py-2.5 cursor-pointer border-none transition-colors first:rounded-t-[6px] last:rounded-b-[6px] ${
+                        arabicFont === f.id
+                          ? 'bg-emerald/6 text-emerald-deep'
+                          : 'bg-surface text-ink-2 hover:bg-paper-warm'
+                      }`}
+                    >
+                      {f.label}
+                      {arabicFont === f.id && <UiIcon name="check-green" size={12} className="ml-2 align-[-1px]" />}
+                    </button>
+                  ))}
+                </div>
+              </>,
+              document.body,
+            )}
         </div>
 
         {/* Font size controls */}
@@ -525,6 +625,83 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
             A+
           </button>
         </div>
+
+        {/* Cari ayat di dalam surah ini: nomor ayat untuk loncat cepat,
+            atau kata/frasa yang dicocokkan ke terjemahan. */}
+        {showFind && (
+          <div className="w-full pt-1">
+            <div className="flex gap-2 items-center">
+              <input
+                ref={findInputRef}
+                value={findQuery}
+                onChange={(e) => setFindQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === 'Enter' &&
+                    findNumber !== null &&
+                    findNumber >= 1 &&
+                    findNumber <= verses.length
+                  ) {
+                    jumpToAyah(findNumber)
+                  }
+                }}
+                placeholder={`Nomor ayat (1–${verses.length || '…'}) atau kata di terjemahan…`}
+                className="flex-1 min-w-0 text-[13px] font-semibold px-3 py-2 rounded-[4px] border border-line bg-paper text-ink placeholder:text-ink-4 focus:outline-none focus:border-emerald"
+              />
+              {findNumber !== null && findNumber >= 1 && findNumber <= verses.length && (
+                <button
+                  onClick={() => jumpToAyah(findNumber)}
+                  className="flex-none text-[12px] font-bold px-3 py-2 rounded-[4px] border border-emerald-deep bg-emerald-deep text-white cursor-pointer"
+                >
+                  Ke ayat {findNumber}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setShowFind(false)
+                  setFindQuery('')
+                }}
+                aria-label="Tutup pencarian"
+                className="flex-none w-8 h-8 grid place-items-center border border-line rounded-[4px] bg-surface cursor-pointer"
+              >
+                <UiIcon name="close-grey" size={13} />
+              </button>
+            </div>
+            {findNumber !== null && verses.length > 0 && (findNumber < 1 || findNumber > verses.length) && (
+              <p className="text-[11px] font-semibold text-[#B5372A] mt-1.5 mb-0">
+                Surah ini hanya punya {verses.length} ayat.
+              </p>
+            )}
+            {findTrim.length >= 2 &&
+              findNumber === null &&
+              (findResults.length === 0 ? (
+                <p className="text-[11px] font-semibold text-ink-4 mt-1.5 mb-0">
+                  Tidak ada ayat yang cocok di surah ini.
+                </p>
+              ) : (
+                <div className="mt-1.5 border border-line rounded-[6px] overflow-hidden">
+                  {findResults.map((v) => (
+                    <button
+                      key={v.ayah_no}
+                      onClick={() => {
+                        jumpToAyah(v.ayah_no)
+                        setShowFind(false)
+                        setFindQuery('')
+                      }}
+                      className="w-full flex gap-2.5 items-start text-left px-3 py-2 bg-surface hover:bg-paper-warm border-none cursor-pointer border-b border-line-soft last:border-b-0"
+                    >
+                      <span className="flex-none text-[11px] font-extrabold text-emerald-deep bg-emerald/6 rounded-[4px] px-1.5 py-0.5">
+                        Ayat {v.ayah_no}
+                      </span>
+                      <span className="text-[12px] text-ink-2 leading-snug">
+                        {findSnippet(v.translation_id, findTrim)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Basmalah dari data ayat 1:1 (tidak untuk Al-Fatihah — sudah jadi
@@ -559,9 +736,9 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                 setActiveVerse(isActive ? null : verse.ayah_no)
                 setSelectedRule(null)
               }}
-              className={`py-[22px] border-b border-line-soft last:border-b-0 cursor-pointer transition-colors ${
-                isActive ? 'bg-gold/8 mx-[-20px] px-5' : ''
-              }`}
+              className={`py-[22px] border-b border-line-soft last:border-b-0 cursor-pointer transition-colors duration-500 scroll-mt-[118px] ${
+                isActive || flashAyah === verse.ayah_no ? 'mx-[-20px] px-5' : ''
+              } ${flashAyah === verse.ayah_no ? 'bg-gold/20' : isActive ? 'bg-gold/8' : ''}`}
             >
               {/* Verse top row */}
               <div className="flex justify-between items-center mb-3.5">
