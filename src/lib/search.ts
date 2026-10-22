@@ -198,6 +198,20 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'amanah':   { primary: ['الأمانة'], contains: 'أمانات', lemmaRoot: 'أمانة|أمانات|أمانت' },
   // الإخلاص sebagai masdar tidak pernah muncul telanjang (0x) — yang ada bentuk-bentuk mukhlis/mukhlas
   'ikhlas':   { primary: ['المخلصين', 'مخلصين', 'مخلصا'], contains: 'خلص', lemmaRoot: 'خلص' },
+  // Klaster cahaya & waktu (ditambahkan 22 Okt — audit per bentuk token;
+  // LEMMA dalam ayat unik: cahaya 33, malam 81, siang 50, gelap 21,
+  // matahari 32, fajar 5. Jebakan yang disingkirkan dari LEMMA: التنور
+  // "oven" & نورث "Kami wariskan" dari cahaya; قليل "sedikit" (71 kemunculan)
+  // & خليل dari malam; أنهار "sungai-sungai" (51) dari siang; akar فجر
+  // bermakna "memancar" (air) & الفجرة "para pendurhaka" dari fajar)
+  'cahaya':   { primary: ['النور'], contains: 'نور', lemmaRoot: 'نور', lemmaForms: ['النور', 'نورا', 'نور', 'والنور', 'نوره', 'ونور', 'نورهم', 'بنورهم', 'لنوره', 'بنور', 'نوركم', 'ونورهم', 'نورنا'] },
+  'nur':      { primary: ['النور'], contains: 'نور', lemmaRoot: 'نور', lemmaForms: ['النور', 'نورا', 'نور', 'والنور', 'نوره', 'ونور', 'نورهم', 'بنورهم', 'لنوره', 'بنور', 'نوركم', 'ونورهم', 'نورنا'] },
+  'malam':    { primary: ['الليل'], contains: 'ليل', lemmaRoot: 'ليل|ليال', lemmaForms: ['الليل', 'ليلة', 'والليل', 'بالليل', 'ليلا', 'ليال', 'ليالي', 'وليال', 'بليل', 'وبالليل', 'ليلها'] },
+  'siang':    { primary: ['النهار'], contains: 'نهار', lemmaRoot: 'نهار', lemmaForms: ['والنهار', 'النهار', 'بالنهار', 'نهارا', 'نهار', 'ونهارا'] },
+  'gelap':    { primary: ['الظلمات'], contains: 'ظلمات', lemmaRoot: 'ظلمات', lemmaForms: ['الظلمات', 'ظلمات', 'كظلمات'] },
+  'kegelapan': { primary: ['الظلمات'], contains: 'ظلمات', lemmaRoot: 'ظلمات', lemmaForms: ['الظلمات', 'ظلمات', 'كظلمات'] },
+  'matahari': { primary: ['الشمس'], contains: 'شمس', lemmaRoot: 'شمس', lemmaForms: ['الشمس', 'والشمس', 'للشمس', 'بالشمس', 'شمسا'] },
+  'fajar':    { primary: ['الفجر'], contains: 'فجر', lemmaRoot: 'فجر', lemmaForms: ['الفجر', 'والفجر'] },
 }
 
 export function transliterate(input: string): string[] {
