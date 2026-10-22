@@ -202,7 +202,14 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
       raf = requestAnimationFrame(step)
     }
     raf = requestAnimationFrame(step)
-    const stop = () => setAutoScroll(false)
+    const stop = (e: Event) => {
+      // Sentuhan/klik pada kontrol gulir sendiri (dock kiri) TIDAK menghentikan
+      // gulir — tanpa penjaga ini, di mobile setiap ketukan pada tombol +/−
+      // memicu touchstart di window dan gulir mati sebelum klik sempat jalan
+      // (di desktop aman karena klik mouse tidak memicu touchstart).
+      if (e.target instanceof Element && e.target.closest('[data-scrollctl]')) return
+      setAutoScroll(false)
+    }
     window.addEventListener('wheel', stop, { passive: true })
     window.addEventListener('touchstart', stop, { passive: true })
     return () => {
@@ -211,6 +218,18 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
       window.removeEventListener('touchstart', stop)
     }
   }, [autoScroll, speedIdx])
+
+  // Dock gulir (portal ke body) hanya tampil saat layar Baca ini yang aktif:
+  // AppShell menyembunyikan layar lain dengan display:none, dan elemen di
+  // dalam wrapper yang tersembunyi tidak pernah berpotongan dengan viewport.
+  const [dockVisible, setDockVisible] = useState(false)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([en]) => setDockVisible(en.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   const stepSpeed = useCallback(
     (delta: number) => {
@@ -453,42 +472,9 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
           Terjemah
         </button>
 
-        {/* Auto-scroll ngaji */}
-        <button
-          onClick={() => setAutoScroll((v) => !v)}
-          className={`text-[12px] font-bold px-3 py-[7px] rounded-[4px] border cursor-pointer flex items-center gap-[5px] transition-all duration-[120ms] ${
-            autoScroll
-              ? 'bg-emerald-deep text-white border-emerald-deep'
-              : 'bg-surface text-ink-3 border-line'
-          }`}
-          aria-pressed={autoScroll}
-        >
-          <span className="text-[10px]">{autoScroll ? '⏸' : '▶'}</span>
-          Gulir
-        </button>
-        {autoScroll && (
-          <div className="flex items-center border border-line rounded-[4px] overflow-hidden bg-surface">
-            <button
-              onClick={() => stepSpeed(-1)}
-              disabled={speedIdx === 0}
-              className="w-7 h-[30px] border-none bg-surface text-ink-3 cursor-pointer grid place-items-center text-[14px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
-              aria-label="Perlambat gulir"
-            >
-              −
-            </button>
-            <span className="text-[11px] font-bold text-ink-2 px-1 whitespace-nowrap tabular-nums">
-              {AUTO_SCROLL_LEVELS[speedIdx].label}
-            </span>
-            <button
-              onClick={() => stepSpeed(1)}
-              disabled={speedIdx === AUTO_SCROLL_LEVELS.length - 1}
-              className="w-7 h-[30px] border-none bg-surface text-ink-3 cursor-pointer grid place-items-center text-[14px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
-              aria-label="Percepat gulir"
-            >
-              +
-            </button>
-          </div>
-        )}
+        {/* Kontrol gulir otomatis pindah ke dock sticky di sisi kiri layar
+            (dirender via portal di bawah) — bisa dijangkau sambil membaca,
+            tanpa harus kembali ke atas. */}
 
         {/* Font picker */}
         <div className="relative">
@@ -782,6 +768,61 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
                 ✕
               </button>
             </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Dock gulir otomatis — sticky di sisi kiri, tengah vertikal. Portal
+          ke body (transform wrapper mematahkan fixed) + hanya tampil saat
+          layar ini aktif (dockVisible dari IntersectionObserver). */}
+      {dockVisible &&
+        createPortal(
+          <div
+            data-scrollctl
+            style={{
+              position: 'fixed',
+              left: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 40,
+            }}
+            className="flex flex-col items-center gap-[2px] rounded-full border border-line bg-surface/95 py-[6px] px-[3px] shadow-[0_6px_24px_rgba(0,0,0,0.14)] backdrop-blur-sm"
+          >
+            <button
+              onClick={() => setAutoScroll((v) => !v)}
+              aria-pressed={autoScroll}
+              aria-label={autoScroll ? 'Jeda gulir otomatis' : 'Mulai gulir otomatis'}
+              className={`w-9 h-9 rounded-full border cursor-pointer grid place-items-center text-[11px] transition-all duration-[120ms] ${
+                autoScroll
+                  ? 'bg-emerald-deep text-white border-emerald-deep'
+                  : 'bg-paper-warm text-ink-3 border-line'
+              }`}
+            >
+              {autoScroll ? '⏸' : '▶'}
+            </button>
+            {autoScroll && (
+              <>
+                <button
+                  onClick={() => stepSpeed(1)}
+                  disabled={speedIdx === AUTO_SCROLL_LEVELS.length - 1}
+                  aria-label="Percepat gulir"
+                  className="w-9 h-8 rounded-full border-none bg-transparent text-ink-2 cursor-pointer grid place-items-center text-[16px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
+                >
+                  +
+                </button>
+                <span className="max-w-[40px] text-center text-[8.5px] font-bold leading-[1.15] text-ink-3">
+                  {AUTO_SCROLL_LEVELS[speedIdx].label}
+                </span>
+                <button
+                  onClick={() => stepSpeed(-1)}
+                  disabled={speedIdx === 0}
+                  aria-label="Perlambat gulir"
+                  className="w-9 h-8 rounded-full border-none bg-transparent text-ink-2 cursor-pointer grid place-items-center text-[16px] font-extrabold transition-colors hover:bg-paper-warm disabled:opacity-30"
+                >
+                  −
+                </button>
+              </>
+            )}
           </div>,
           document.body
         )}
