@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { StatusMarker } from '@/components/ui/StatusMarker'
 import { VerseCard } from '@/components/ui/VerseCard'
+import { UiIcon } from '@/components/ui/UiIcon'
 import { loadData } from '@/lib/data'
 import type { Verse } from '@/lib/search'
 import {
@@ -121,10 +122,16 @@ function ShelfCard({
       </p>
 
       <div className="flex justify-between items-center border-t border-line-soft pt-[8px] mt-auto text-[10px] font-bold uppercase tracking-[0.04em] text-ink-4">
-        <span className={isRead ? 'text-emerald' : ''}>
-          {isRead ? '✓ Dibaca' : 'Belum dibaca'}
+        <span className={`inline-flex items-center gap-[4px] ${isRead ? 'text-emerald' : ''}`}>
+          {isRead ? (
+            <>
+              <UiIcon name="check-green" size={11} /> Dibaca
+            </>
+          ) : (
+            'Belum dibaca'
+          )}
         </span>
-        <span aria-hidden="true">↗</span>
+        <UiIcon name="forward-grey" size={11} />
       </div>
     </article>
   )
@@ -224,8 +231,10 @@ function DetailDrawer({
                     className="flex justify-between items-baseline gap-[10px] py-[6px] border-b border-line-soft last:border-b-0 text-[13px] text-ink-2 font-semibold"
                   >
                     <span>{f.label}</span>
-                    <span className="font-extrabold text-ink whitespace-nowrap tabular-nums">
-                      {f.nilai}
+                    <span className="font-extrabold text-ink whitespace-nowrap tabular-nums inline-flex items-center gap-[5px]">
+                      {f.nilai.replace(/\s*[✓✗]\s*$/, '')}
+                      {f.nilai.includes('✗') && <UiIcon name="cross-red" size={13} />}
+                      {f.nilai.includes('✓') && <UiIcon name="check-green" size={13} />}
                     </span>
                   </div>
                 ))}
@@ -273,9 +282,9 @@ function DetailDrawer({
                   onSearch(card.cek!)
                   onClose()
                 }}
-                className="flex-1 text-[13px] font-bold bg-emerald text-white border border-emerald rounded-[4px] py-[11px] cursor-pointer hover:bg-emerald-deep transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-[6px] text-[13px] font-bold bg-emerald text-white border border-emerald rounded-[4px] py-[11px] cursor-pointer hover:bg-emerald-deep transition-colors"
               >
-                Cek sendiri →
+                Cek sendiri <UiIcon name="forward-white" size={13} />
               </button>
             )}
             <button
@@ -447,7 +456,9 @@ export function WawasanScreen({ onNavigate, onSearch, focusCardId }: WawasanScre
           onClick={() => onNavigate('metodologi')}
           className="block mt-[6px] bg-none border-none cursor-pointer text-[12px] font-bold text-emerald p-0"
         >
-          Metodologi &amp; Sumber →
+          <span className="inline-flex items-center gap-[5px]">
+            Metodologi &amp; Sumber <UiIcon name="forward-emerald" size={12} />
+          </span>
         </button>
       </footer>
 
