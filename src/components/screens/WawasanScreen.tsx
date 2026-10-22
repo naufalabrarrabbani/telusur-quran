@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { StatusMarker } from '@/components/ui/StatusMarker'
 import { VerseCard } from '@/components/ui/VerseCard'
 import { loadData } from '@/lib/data'
 import type { Verse } from '@/lib/search'
 import {
   WAWASAN_CARDS,
-  WAWASAN_KATEGORI,
   type WawasanCardData,
   type WawasanStatus,
 } from '@/lib/wawasan-data'
@@ -15,15 +15,17 @@ import {
 interface WawasanScreenProps {
   onNavigate: (screen: string) => void
   onSearch?: (query: string) => void
-  /** Kartu yang dipin ke atas & ditandai featured (dari Pintu Emosi di Beranda) */
   focusCardId?: number | null
 }
 
-const STATUS_MAP: Record<WawasanStatus, { marker: 'lolos' | 'bersyarat' | 'kontested' | 'belum'; label: string }> = {
-  'SIAP': { marker: 'lolos', label: 'TERVERIFIKASI' },
-  'LOLOS BERSYARAT': { marker: 'bersyarat', label: 'LOLOS BERSYARAT' },
-  'KONTESTED': { marker: 'kontested', label: 'KONTESTED' },
-  'PERLU CEK SUMBER': { marker: 'belum', label: 'BUKTI OK · KONTEKS BELUM DICEK' },
+const STATUS_MAP: Record<
+  WawasanStatus,
+  { marker: 'lolos' | 'bersyarat' | 'kontested' | 'belum'; label: string; short: string }
+> = {
+  'SIAP': { marker: 'lolos', label: 'TERVERIFIKASI', short: 'Terverifikasi' },
+  'LOLOS BERSYARAT': { marker: 'bersyarat', label: 'LOLOS BERSYARAT', short: 'Bersyarat' },
+  'KONTESTED': { marker: 'kontested', label: 'KONTESTED', short: 'Kontested' },
+  'PERLU CEK SUMBER': { marker: 'belum', label: 'BUKTI OK · KONTEKS BELUM DICEK', short: 'Perlu Cek' },
 }
 
 const STORAGE_KEY = 'wawasan-read'
@@ -53,62 +55,102 @@ function SectionTitle({ children }: { children: string }) {
   )
 }
 
-function ReadCheckbox({
-  checked,
-  onToggle,
+/* -------------------- Compact Shelf Card -------------------- */
+
+function ShelfCard({
+  card,
+  isRead,
+  onOpen,
+  onToggleRead,
 }: {
-  checked: boolean
-  onToggle: () => void
+  card: WawasanCardData
+  isRead: boolean
+  onOpen: () => void
+  onToggleRead: () => void
 }) {
+  const status = STATUS_MAP[card.status]
+
   return (
-    <button
-      onClick={(e) => {
-        e.stopPropagation()
-        onToggle()
-      }}
-      className={`w-[22px] h-[22px] rounded-[4px] border-2 flex items-center justify-center shrink-0 cursor-pointer transition-colors duration-100 ${
-        checked
-          ? 'bg-emerald border-emerald text-white'
-          : 'bg-transparent border-ink-4/30 text-transparent hover:border-emerald/60'
+    <article
+      onClick={onOpen}
+      className={`shrink-0 w-[240px] snap-start rounded-[6px] border p-[14px_13px_12px] cursor-pointer transition-colors duration-100 flex flex-col min-h-[160px] ${
+        isRead
+          ? 'bg-emerald/[0.03] border-emerald/25'
+          : 'bg-surface border-line hover:border-emerald'
       }`}
-      title={checked ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
-      aria-label={checked ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
     >
-      {checked && (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path
-            d="M2.5 6L5 8.5L9.5 3.5"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </button>
+      <div className="flex justify-between items-start gap-2 mb-[8px]">
+        <StatusMarker status={status.marker} label={status.short} />
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleRead()
+          }}
+          className={`w-[20px] h-[20px] rounded-[4px] border-2 flex items-center justify-center shrink-0 cursor-pointer transition-colors duration-100 ${
+            isRead
+              ? 'bg-emerald border-emerald text-white'
+              : 'bg-transparent border-ink-4/30 text-transparent hover:border-emerald/60'
+          }`}
+          title={isRead ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
+          aria-label={isRead ? 'Tandai belum dibaca' : 'Tandai sudah dibaca'}
+        >
+          {isRead && (
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path
+                d="M2.5 6L5 8.5L9.5 3.5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      <h3
+        className={`m-0 mb-[6px] text-[14px] font-extrabold leading-[1.35] tracking-[-0.01em] line-clamp-3 ${
+          isRead ? 'text-ink-3' : 'text-ink'
+        }`}
+      >
+        {card.judul}
+      </h3>
+
+      <p className="m-0 mb-[10px] text-[11.5px] leading-[1.5] text-ink-3 line-clamp-2 flex-1">
+        {card.hook}
+      </p>
+
+      <div className="flex justify-between items-center border-t border-line-soft pt-[8px] mt-auto text-[10px] font-bold uppercase tracking-[0.04em] text-ink-4">
+        <span className={isRead ? 'text-emerald' : ''}>
+          {isRead ? '✓ Dibaca' : 'Belum dibaca'}
+        </span>
+        <span aria-hidden="true">↗</span>
+      </div>
+    </article>
   )
 }
 
-function WawasanCard({
+/* -------------------- Detail Drawer -------------------- */
+
+function DetailDrawer({
   card,
   verses,
-  onSearch,
-  featured = false,
   isRead,
+  onClose,
   onToggleRead,
-  expanded,
-  onToggleExpanded,
+  onSearch,
 }: {
   card: WawasanCardData
   verses: Verse[] | null
-  onSearch?: (query: string) => void
-  featured?: boolean
   isRead: boolean
+  onClose: () => void
   onToggleRead: () => void
-  expanded: boolean
-  onToggleExpanded: () => void
+  onSearch?: (query: string) => void
 }) {
   const status = STATUS_MAP[card.status]
+
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const ayatVerses = useMemo(() => {
     if (!verses || !card.ayat) return []
@@ -120,66 +162,57 @@ function WawasanCard({
       .filter((v): v is Verse => Boolean(v))
   }, [verses, card.ayat])
 
-  const baseClass = featured
-    ? 'bg-[linear-gradient(160deg,rgba(26,107,74,0.04),var(--color-surface)_50%)] border-[1.5px] border-emerald rounded-[6px] p-[18px_16px] mb-3 shadow-[0_2px_16px_rgba(26,107,74,0.06)]'
-    : isRead
-      ? 'bg-emerald/[0.03] border border-emerald/25 rounded-[6px] p-[18px_16px] mb-3'
-      : 'bg-surface border border-line rounded-[6px] p-[18px_16px] mb-3'
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handler)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
 
-  return (
-    <article className={baseClass}>
-      {/* Header: kategori eyebrow + status + read checkbox */}
-      <div className="flex justify-between items-start gap-2 mb-[10px]">
-        <span className="block text-[10px] font-extrabold tracking-[0.1em] text-emerald uppercase pt-[2px]">
-          {card.sorotan ?? card.kategori}
-        </span>
-        <div className="flex items-start gap-[10px]">
-          <StatusMarker status={status.marker} label={status.label} />
-          <ReadCheckbox checked={isRead} onToggle={onToggleRead} />
-        </div>
-      </div>
+  if (!mounted) return null
 
-      {/* Clickable title area — toggles expand */}
-      <button
-        onClick={onToggleExpanded}
-        className="block w-full text-left bg-transparent border-0 p-0 cursor-pointer"
-        aria-expanded={expanded}
+  const drawerNode = (
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 drawer-overlay"
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-[500px] bg-paper rounded-t-[12px] sm:rounded-[12px] overflow-y-auto drawer-sheet"
+        style={{ maxHeight: '92vh' }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-2">
-          <h3
-            className={`m-0 flex-1 text-[19px] font-extrabold leading-[1.35] tracking-[-0.01em] ${
-              isRead && !featured ? 'text-ink-3' : 'text-ink'
-            }`}
-          >
-            {card.judul}
-          </h3>
-          <span
-            className={`shrink-0 w-[24px] h-[24px] flex items-center justify-center text-ink-4 transition-transform duration-200 mt-[2px] ${
-              expanded ? 'rotate-180' : ''
-            }`}
-            aria-hidden="true"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M4 6L8 10L12 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+        <div className="sticky top-0 bg-paper/95 backdrop-blur-sm border-b border-line-soft px-4 py-3 flex items-center justify-between z-10">
+          <span className="text-[10px] font-extrabold tracking-[0.1em] text-emerald uppercase">
+            {card.sorotan ?? card.kategori}
           </span>
+          <button
+            onClick={onClose}
+            className="w-[32px] h-[32px] flex items-center justify-center rounded-[4px] hover:bg-line-soft cursor-pointer bg-transparent border-0 text-ink-2"
+            aria-label="Tutup"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M4 4L14 14M14 4L4 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
-        <p className="mt-[8px] mb-0 text-[13.5px] leading-[1.65] font-semibold text-ink-2">
-          {card.hook}
-        </p>
-      </button>
 
-      {/* Expanded body */}
-      {expanded && (
-        <>
-          {/* Bukti */}
-          <div className="mt-[18px]">
+        <div className="p-4 pb-6">
+          <div className="mb-3">
+            <StatusMarker status={status.marker} label={status.label} />
+          </div>
+          <h2 className="m-0 text-[22px] font-extrabold leading-[1.3] tracking-[-0.015em] text-ink">
+            {card.judul}
+          </h2>
+          <p className="mt-[10px] mb-0 text-[14px] leading-[1.6] font-semibold text-ink-2">
+            {card.hook}
+          </p>
+
+          <div className="mt-[22px]">
             <SectionTitle>Bukti · Terverifikasi Mesin</SectionTitle>
             <p className="m-0 text-[13px] leading-[1.7] text-ink-3">{card.bukti}</p>
 
@@ -191,7 +224,9 @@ function WawasanCard({
                     className="flex justify-between items-baseline gap-[10px] py-[6px] border-b border-line-soft last:border-b-0 text-[13px] text-ink-2 font-semibold"
                   >
                     <span>{f.label}</span>
-                    <span className="font-extrabold text-ink whitespace-nowrap tabular-nums">{f.nilai}</span>
+                    <span className="font-extrabold text-ink whitespace-nowrap tabular-nums">
+                      {f.nilai}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -210,12 +245,13 @@ function WawasanCard({
                   />
                 ))
               ) : (
-                <p className="mt-[10px] mb-0 text-[12px] font-semibold text-ink-4">Memuat data ayat…</p>
+                <p className="mt-[10px] mb-0 text-[12px] font-semibold text-ink-4">
+                  Memuat data ayat…
+                </p>
               ))}
           </div>
 
-          {/* Konteks */}
-          <div className="mt-[18px]">
+          <div className="mt-[22px]">
             <SectionTitle>Konteks</SectionTitle>
             <p className="m-0 text-[13px] leading-[1.7] text-ink-3">{card.konteks}</p>
             <p className="mt-[8px] mb-0 text-[11px] leading-[1.6] text-ink-4">
@@ -223,43 +259,82 @@ function WawasanCard({
             </p>
           </div>
 
-          {/* Makna */}
-          <div className="mt-[18px]">
+          <div className="mt-[22px]">
             <SectionTitle>Makna buatmu</SectionTitle>
             <p className="m-0 text-[15px] leading-[1.65] font-bold text-ink bg-gold/8 border-l-[3px] border-l-gold rounded-r-[6px] p-[13px_14px]">
               {card.makna}
             </p>
           </div>
 
-          {card.cek && onSearch && (
-            <button
-              onClick={() => onSearch(card.cek!)}
-              className="mt-3 w-full text-[13px] font-bold bg-transparent text-emerald border border-line rounded-[4px] py-[10px] cursor-pointer transition-[border-color] duration-[120ms] hover:border-emerald"
-            >
-              Cek sendiri → cari &quot;{card.cek}&quot;
-            </button>
-          )}
-
-          {/* Mark-as-read quick action at bottom when expanded */}
-          {!isRead && (
+          <div className="mt-[22px] flex gap-2">
+            {card.cek && onSearch && (
+              <button
+                onClick={() => {
+                  onSearch(card.cek!)
+                  onClose()
+                }}
+                className="flex-1 text-[13px] font-bold bg-emerald text-white border border-emerald rounded-[4px] py-[11px] cursor-pointer hover:bg-emerald-deep transition-colors"
+              >
+                Cek sendiri →
+              </button>
+            )}
             <button
               onClick={onToggleRead}
-              className="mt-2 w-full text-[13px] font-bold bg-emerald/5 text-emerald border border-emerald/30 rounded-[4px] py-[10px] cursor-pointer transition-colors duration-[120ms] hover:bg-emerald/10"
+              className={`text-[13px] font-bold rounded-[4px] py-[11px] px-4 cursor-pointer border transition-colors flex items-center gap-[6px] ${
+                isRead
+                  ? 'bg-emerald/10 border-emerald text-emerald'
+                  : 'bg-surface border-line text-ink-2 hover:border-emerald'
+              }`}
             >
-              ✓ Tandai sudah dibaca
+              {isRead ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                    <path
+                      d="M2.5 6L5 8.5L9.5 3.5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Dibaca
+                </>
+              ) : (
+                'Tandai dibaca'
+              )}
             </button>
-          )}
-        </>
-      )}
-    </article>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .drawer-overlay {
+          animation: fadeIn 200ms ease-out;
+        }
+        .drawer-sheet {
+          animation: slideUp 280ms cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+      `}</style>
+    </div>
   )
+
+  return createPortal(drawerNode, document.body)
 }
 
+/* -------------------- Main Screen -------------------- */
+
 export function WawasanScreen({ onNavigate, onSearch, focusCardId }: WawasanScreenProps) {
-  const [kategori, setKategori] = useState<string>('Semua')
   const [verses, setVerses] = useState<Verse[] | null>(null)
   const [readIds, setReadIds] = useState<Set<number>>(new Set())
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+  const [openCardId, setOpenCardId] = useState<number | null>(null)
 
   useEffect(() => {
     loadData().then((data) => {
@@ -271,15 +346,9 @@ export function WawasanScreen({ onNavigate, onSearch, focusCardId }: WawasanScre
     setReadIds(loadReadSet())
   }, [])
 
-  // Masuk dari Pintu Emosi: tampilkan semua kategori, pin & auto-expand kartu tujuannya
   useEffect(() => {
     if (focusCardId != null) {
-      setKategori('Semua')
-      setExpandedIds((prev) => {
-        const next = new Set(prev)
-        next.add(focusCardId)
-        return next
-      })
+      setOpenCardId(focusCardId)
     }
   }, [focusCardId])
 
@@ -293,38 +362,40 @@ export function WawasanScreen({ onNavigate, onSearch, focusCardId }: WawasanScre
     })
   }, [])
 
-  const toggleExpanded = useCallback((id: number) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }, [])
-
-  const visible = useMemo(() => {
-    const list = kategori === 'Semua' ? [...WAWASAN_CARDS] : WAWASAN_CARDS.filter((c) => c.kategori === kategori)
-    if (focusCardId != null) {
-      list.sort((a, b) => (a.id === focusCardId ? -1 : b.id === focusCardId ? 1 : 0))
+  // Group cards by kategori, preserve first-seen order
+  const shelves = useMemo(() => {
+    const order: string[] = []
+    const map = new Map<string, WawasanCardData[]>()
+    for (const c of WAWASAN_CARDS) {
+      if (!map.has(c.kategori)) {
+        map.set(c.kategori, [])
+        order.push(c.kategori)
+      }
+      map.get(c.kategori)!.push(c)
     }
-    return list
-  }, [kategori, focusCardId])
+    return order.map((k) => ({ kategori: k, cards: map.get(k)! }))
+  }, [])
 
   const totalRead = readIds.size
   const totalCards = WAWASAN_CARDS.length
   const percent = totalCards > 0 ? Math.round((totalRead / totalCards) * 100) : 0
 
-  const visibleReadCount = visible.filter((c) => readIds.has(c.id)).length
+  const openCard = useMemo(
+    () => (openCardId != null ? WAWASAN_CARDS.find((c) => c.id === openCardId) ?? null : null),
+    [openCardId]
+  )
 
   return (
     <div>
-      <h2 className="mt-[2px] mb-1 text-[20px] font-extrabold tracking-[-0.02em]">Kartu Wawasan</h2>
+      <h2 className="mt-[2px] mb-1 text-[20px] font-extrabold tracking-[-0.02em]">
+        Kartu Wawasan
+      </h2>
       <p className="mb-3 text-[13px] leading-[1.6] text-ink-3">
-        Hal-hal yang jarang disadari dari teks Al-Qur&apos;an — tiap kartu dibuka dengan hook, lalu buktinya, konteksnya, dan maknanya. {totalCards} kartu, semua angkanya dihitung dari teks Tanzil dan ditampilkan dengan cara hitungnya.
+        {totalCards} hal yang jarang disadari dari teks Al-Qur&apos;an — geser tiap
+        baris, tap kartu untuk buka.
       </p>
 
-      {/* Progress bar */}
-      <div className="mb-4 bg-surface border border-line rounded-[6px] p-3">
+      <div className="mb-5 bg-surface border border-line rounded-[6px] p-3">
         <div className="flex items-center justify-between mb-[6px]">
           <span className="text-[12px] font-bold text-ink-2">
             {totalRead} dari {totalCards} kartu dibaca
@@ -341,57 +412,68 @@ export function WawasanScreen({ onNavigate, onSearch, focusCardId }: WawasanScre
         </div>
       </div>
 
-      {/* Filter kategori — rectangular, no pills */}
-      <div className="flex flex-wrap gap-[6px] mb-3">
-        {WAWASAN_KATEGORI.map((k) => {
-          const active = kategori === k
-          const count = k === 'Semua' ? totalCards : WAWASAN_CARDS.filter((c) => c.kategori === k).length
-          return (
-            <button
-              key={k}
-              onClick={() => setKategori(k)}
-              className={
-                active
-                  ? 'text-[12px] font-bold rounded-[4px] px-3 py-[7px] cursor-pointer bg-emerald-deep text-white border border-emerald-deep'
-                  : 'text-[12px] font-bold rounded-[4px] px-3 py-[7px] cursor-pointer bg-surface text-ink-2 border border-line hover:border-emerald hover:text-emerald'
-              }
-            >
-              {k} · {count}
-            </button>
-          )
-        })}
-      </div>
+      {shelves.map(({ kategori, cards }) => {
+        const shelfRead = cards.filter((c) => readIds.has(c.id)).length
+        return (
+          <section key={kategori} className="mb-6 -mx-4">
+            <div className="flex justify-between items-baseline px-4 mb-[10px]">
+              <span className="text-[11px] font-extrabold tracking-[0.08em] text-emerald uppercase">
+                {kategori} · {cards.length} kartu
+              </span>
+              <span className="text-[11px] font-semibold text-ink-4 tabular-nums">
+                {shelfRead}/{cards.length} dibaca
+              </span>
+            </div>
+            <div className="flex gap-[10px] overflow-x-auto snap-x snap-mandatory px-4 pb-1 wawasan-rail">
+              {cards.map((card) => (
+                <ShelfCard
+                  key={card.id}
+                  card={card}
+                  isRead={readIds.has(card.id)}
+                  onOpen={() => setOpenCardId(card.id)}
+                  onToggleRead={() => toggleRead(card.id)}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      })}
 
-      {/* Filter + read counter row */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[11px] font-bold text-ink-4 uppercase tracking-[0.06em]">
-          {kategori === 'Semua' ? 'Semua kategori' : kategori}
-        </span>
-        <span className="text-[11px] font-semibold text-ink-4 tabular-nums">
-          {visibleReadCount}/{visible.length} dibaca
-        </span>
-      </div>
-
-      {visible.map((card) => (
-        <WawasanCard
-          key={card.id}
-          card={card}
-          verses={verses}
-          onSearch={onSearch}
-          featured={focusCardId != null ? card.id === focusCardId : false}
-          isRead={readIds.has(card.id)}
-          onToggleRead={() => toggleRead(card.id)}
-          expanded={expandedIds.has(card.id)}
-          onToggleExpanded={() => toggleExpanded(card.id)}
-        />
-      ))}
-
-      <footer className="mt-[30px] border-t border-line-soft pt-[14px] text-[11px] leading-[1.6] text-ink-4">
-        Semua wawasan di sini terkurasi &amp; terverifikasi dari teks — bukan karangan AI. Kartu berlabel &quot;konteks belum dicek&quot; buktinya sudah terverifikasi mesin, tetapi pendalaman tafsirnya masih antre diteliti.
-        <button onClick={() => onNavigate('metodologi')} className="block mt-[6px] bg-none border-none cursor-pointer text-[12px] font-bold text-emerald p-0">
+      <footer className="mt-[20px] border-t border-line-soft pt-[14px] text-[11px] leading-[1.6] text-ink-4">
+        Semua wawasan di sini terkurasi &amp; terverifikasi dari teks — bukan karangan
+        AI. Kartu berlabel &quot;konteks belum dicek&quot; buktinya sudah terverifikasi
+        mesin, tetapi pendalaman tafsirnya masih antre diteliti.
+        <button
+          onClick={() => onNavigate('metodologi')}
+          className="block mt-[6px] bg-none border-none cursor-pointer text-[12px] font-bold text-emerald p-0"
+        >
           Metodologi &amp; Sumber →
         </button>
       </footer>
+
+      {openCard && (
+        <DetailDrawer
+          card={openCard}
+          verses={verses}
+          isRead={readIds.has(openCard.id)}
+          onClose={() => setOpenCardId(null)}
+          onToggleRead={() => toggleRead(openCard.id)}
+          onSearch={onSearch}
+        />
+      )}
+
+      <style jsx global>{`
+        .wawasan-rail {
+          scrollbar-width: thin;
+        }
+        .wawasan-rail::-webkit-scrollbar {
+          height: 4px;
+        }
+        .wawasan-rail::-webkit-scrollbar-thumb {
+          background: var(--color-line);
+          border-radius: 2px;
+        }
+      `}</style>
     </div>
   )
 }
