@@ -24,7 +24,7 @@ const modeNotes: Record<Mode, string> = {
   exact: 'Hanya token yang persis cocok. Bentuk lain tidak ikut terhitung.',
   contains: 'Termasuk token yang mengandung kata ini (misal dengan awalan و / ل / ب).',
   lemma: 'Semua bentuk kata dari lemma yang sama dihitung: tunggal, jamak, dan berawalan.',
-  root: 'Mode paling longgar: semua kata seakar ikut terhitung.',
+  root: 'Mode paling longgar: semua kata seakar ikut terhitung, termasuk turunan yang maknanya sudah berbeda.',
 }
 
 const modeBadge: Record<Mode, string> = {

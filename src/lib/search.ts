@@ -53,12 +53,17 @@ export function normalize(text: string): string {
 // ── Transliteration map ────────────────────────────────────────────────────
 
 // primary: form used for EXACT search
-// contains: form used for CONTAINS substring search  
-// lemmaRoot: short root pattern for LEMMA search (finds ALL forms containing this)
+// contains: form used for CONTAINS substring search
+// lemmaRoot: root patterns for ROOT search (paling luas; substring, bisa ikut
+//   menangkap kata seakar beda makna)
+// lemmaForms: daftar token eksplisit untuk LEMMA search bila pola substring
+//   tidak bisa jujur (mis. 'الجن' juga awalan 'الجنة' = surga). Bila ada,
+//   mode LEMMA memakai daftar ini; mode ROOT tetap pola lemmaRoot.
 interface TranslitEntry {
   primary: string[]    // exact token forms
   contains: string     // substring for CONTAINS mode
-  lemmaRoot: string    // shortest root for LEMMA mode
+  lemmaRoot: string    // patterns for ROOT mode (and LEMMA when no lemmaForms)
+  lemmaForms?: string[] // explicit token list for LEMMA mode
 }
 
 const TRANSLIT_MAP: Record<string, TranslitEntry> = {
@@ -71,23 +76,23 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'adam':     { primary: ['آدم'], contains: 'آدم', lemmaRoot: 'آدم' },
   'isa':      { primary: ['عيسى'], contains: 'عيسى', lemmaRoot: 'عيسى' },
   'muhammad': { primary: ['محمد'], contains: 'محمد', lemmaRoot: 'محمد' },
-  'nabi':     { primary: ['النبي'], contains: 'النبي', lemmaRoot: 'نبي' },
+  'nabi':     { primary: ['النبي'], contains: 'النبي', lemmaRoot: 'نبي', lemmaForms: ['النبي', 'النبيين', 'نبيا', 'نبي', 'لنبي', 'الأنبياء', 'والنبيين', 'للنبي', 'النبيون', 'نبيهم', 'أنبياء', 'والنبيون', 'بالنبيين', 'والنبي', 'ونبيا'] },
   'dunia':    { primary: ['الدنيا'], contains: 'الدنيا', lemmaRoot: 'دنيا' },
   'akhirat':  { primary: ['الآخرة'], contains: 'آخر', lemmaRoot: 'آخر' },
   'allah':    { primary: ['الله'], contains: 'الله', lemmaRoot: 'الله' },
-  'quran':    { primary: ['القران'], contains: 'قران', lemmaRoot: 'قران' },
+  'quran':    { primary: ['القرآن'], contains: 'قرآن', lemmaRoot: 'قرآن' },
   'malaikat': { primary: ['الملائكة'], contains: 'ملائك', lemmaRoot: 'ملائك' },
-  'surga':    { primary: ['الجنة'], contains: 'جن', lemmaRoot: 'جنة|جنات' },
+  'surga':    { primary: ['الجنة'], contains: 'جنة', lemmaRoot: 'جنة|جنات', lemmaForms: ['جنات', 'الجنة', 'جنة', 'وجنات', 'وجنة', 'بالجنة', 'الجنات'] },
   'neraka':   { primary: ['النار'], contains: 'نار', lemmaRoot: 'نار' },
-  'ibrahim':  { primary: ['ابراهيم'], contains: 'براهيم', lemmaRoot: 'براهيم' },
+  'ibrahim':  { primary: ['إبراهيم'], contains: 'براهيم', lemmaRoot: 'براهيم' },
   'yusuf':    { primary: ['يوسف'], contains: 'يوسف', lemmaRoot: 'يوسف' },
-  'nuh':      { primary: ['نوح'], contains: 'نوح', lemmaRoot: 'نوح' },
+  'nuh':      { primary: ['نوح'], contains: 'نوح', lemmaRoot: 'نوح', lemmaForms: ['نوح', 'نوحا', 'ونوحا'] },
   'maryam':   { primary: ['مريم'], contains: 'مريم', lemmaRoot: 'مريم' },
   'hari':     { primary: ['يوم'], contains: 'يوم', lemmaRoot: 'يوم' },
   // ── Perluasan kamus (22 Okt 2026) — setiap entri terverifikasi ke word-index;
   //    bentuk yang tidak muncul di teks tidak dimasukkan.
   'yunus':    { primary: ['يونس'], contains: 'يونس', lemmaRoot: 'يونس' },
-  'ayyub':    { primary: ['أيوب'], contains: 'يوب', lemmaRoot: 'يوب' },
+  'ayyub':    { primary: ['أيوب'], contains: 'أيوب', lemmaRoot: 'أيوب' },
   'yaqub':    { primary: ['يعقوب'], contains: 'يعقوب', lemmaRoot: 'يعقوب' },
   'ishaq':    { primary: ['إسحاق'], contains: 'سحاق', lemmaRoot: 'سحاق' },
   'ismail':   { primary: ['إسماعيل'], contains: 'سماعيل', lemmaRoot: 'سماعيل' },
@@ -97,7 +102,7 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'zakariya': { primary: ['زكريا'], contains: 'زكريا', lemmaRoot: 'زكريا' },
   'yahya':    { primary: ['يحيى'], contains: 'يحيى', lemmaRoot: 'يحيى' },
   'luth':     { primary: ['لوط'], contains: 'لوط', lemmaRoot: 'لوط' },
-  'hud':      { primary: ['هود'], contains: 'هود', lemmaRoot: 'هود' },
+  'hud':      { primary: ['هود'], contains: 'هودا', lemmaRoot: 'هود', lemmaForms: ['هود', 'هودا'] },
   'shalih':   { primary: ['صالح'], contains: 'صالح', lemmaRoot: 'صالح' },
   'saleh':    { primary: ['صالح'], contains: 'صالح', lemmaRoot: 'صالح' },
   'syuaib':   { primary: ['شعيب'], contains: 'شعيب', lemmaRoot: 'شعيب' },
@@ -111,24 +116,24 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'luqman':   { primary: ['لقمان'], contains: 'لقمان', lemmaRoot: 'لقمان' },
   'dzulkarnain': { primary: ['القرنين'], contains: 'القرنين', lemmaRoot: 'القرنين' },
   'imran':    { primary: ['عمران'], contains: 'عمران', lemmaRoot: 'عمران' },
-  'jibril':   { primary: ['جبريل', 'وجبريل', 'لجبريل'], contains: 'جبر', lemmaRoot: 'جبر' },
-  'mikail':   { primary: ['ميكال', 'وميكال'], contains: 'ميكا', lemmaRoot: 'ميكا' },
+  'jibril':   { primary: ['وجبريل', 'لجبريل'], contains: 'جبر', lemmaRoot: 'جبر' },
+  'mikail':   { primary: ['وميكال'], contains: 'ميكا', lemmaRoot: 'ميكا' },
   'iblis':    { primary: ['إبليس'], contains: 'بليس', lemmaRoot: 'بليس' },
-  'jin':      { primary: ['الجن'], contains: 'الجن', lemmaRoot: 'الجن|الجان' },
+  'jin':      { primary: ['الجن'], contains: 'الجن', lemmaRoot: 'الجن|الجان', lemmaForms: ['الجن', 'جان', 'والجن', 'جن', 'والجان', 'الجان'] },
   'shalat':   { primary: ['الصلاة'], contains: 'صلاة', lemmaRoot: 'صلاة|صلات' },
   'sholat':   { primary: ['الصلاة'], contains: 'صلاة', lemmaRoot: 'صلاة|صلات' },
   'solat':    { primary: ['الصلاة'], contains: 'صلاة', lemmaRoot: 'صلاة|صلات' },
   'zakat':    { primary: ['الزكاة'], contains: 'زكاة', lemmaRoot: 'زكا' },
   'puasa':    { primary: ['الصيام'], contains: 'صيام', lemmaRoot: 'صيام|صوم' },
-  'haji':     { primary: ['الحج'], contains: 'حج', lemmaRoot: 'الحج|حج' },
-  'umrah':    { primary: ['العمرة', 'والعمرة', 'بالعمرة'], contains: 'عمرة', lemmaRoot: 'عمرة' },
+  'haji':     { primary: ['الحج'], contains: 'الحج', lemmaRoot: 'الحج|حج', lemmaForms: ['الحج', 'حج', 'بالحج', 'والحج'] },
+  'umrah':    { primary: ['والعمرة', 'بالعمرة'], contains: 'عمرة', lemmaRoot: 'عمرة' },
   'doa':      { primary: ['الدعاء'], contains: 'دعاء', lemmaRoot: 'دعا' },
   'dzikir':   { primary: ['الذكر'], contains: 'ذكر', lemmaRoot: 'ذكر' },
   'zikir':    { primary: ['الذكر'], contains: 'ذكر', lemmaRoot: 'ذكر' },
   'shalawat': { primary: ['صلوات'], contains: 'صلوات', lemmaRoot: 'صلوات' },
   'sujud':    { primary: ['السجود'], contains: 'سجد', lemmaRoot: 'سجد' },
-  'kurban':   { primary: ['قربان', 'قربانا', 'بقربان'], contains: 'قربان', lemmaRoot: 'قربان' },
-  'qurban':   { primary: ['قربان', 'قربانا', 'بقربان'], contains: 'قربان', lemmaRoot: 'قربان' },
+  'kurban':   { primary: ['قربانا', 'بقربان'], contains: 'قربان', lemmaRoot: 'قربان' },
+  'qurban':   { primary: ['قربانا', 'بقربان'], contains: 'قربان', lemmaRoot: 'قربان' },
   'iman':     { primary: ['الإيمان'], contains: 'إيمان', lemmaRoot: 'إيمان' },
   'islam':    { primary: ['الإسلام'], contains: 'إسلام', lemmaRoot: 'إسلام' },
   'muslim':   { primary: ['المسلمين'], contains: 'مسلم', lemmaRoot: 'مسلم' },
@@ -136,13 +141,13 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'taqwa':    { primary: ['التقوى'], contains: 'تقوى', lemmaRoot: 'تقوى|المتقين' },
   'syukur':   { primary: ['شكر'], contains: 'شكر', lemmaRoot: 'شكر' },
   'taubat':   { primary: ['التوبة'], contains: 'توبة', lemmaRoot: 'توب' },
-  'kafir':    { primary: ['الكفار'], contains: 'كفار', lemmaRoot: 'كفر' },
+  'kafir':    { primary: ['الكفار'], contains: 'كفر', lemmaRoot: 'كفر' },
   'munafik':  { primary: ['المنافقون'], contains: 'نافق', lemmaRoot: 'نافق' },
   'syirik':   { primary: ['المشركون'], contains: 'شرك', lemmaRoot: 'شرك' },
   'musyrik':  { primary: ['المشركون'], contains: 'شرك', lemmaRoot: 'شرك' },
   'fitnah':   { primary: ['الفتنة'], contains: 'فتنة', lemmaRoot: 'فتن' },
   'ghaib':    { primary: ['الغيب'], contains: 'غيب', lemmaRoot: 'غيب' },
-  'wahyu':    { primary: ['وحي'], contains: 'وحي', lemmaRoot: 'وحي' },
+  'wahyu':    { primary: ['وحي'], contains: 'وحي', lemmaRoot: 'وحي', lemmaForms: ['أوحينا', 'أوحي', 'وأوحينا', 'نوحي', 'يوحي', 'وأوحي', 'ووحينا', 'نوحيه', 'فأوحينا', 'فيوحي', 'بالوحي', 'أوحيت', 'وحيه', 'وحيا', 'نوحيها', 'وحي'] },
   'rasul':    { primary: ['الرسول'], contains: 'رسول', lemmaRoot: 'رسول|رسل' },
   'hidayah':  { primary: ['الهدى'], contains: 'هدى', lemmaRoot: 'هدى' },
   'rahmat':   { primary: ['الرحمة'], contains: 'رحمة', lemmaRoot: 'رحمة' },
@@ -157,7 +162,7 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'zabur':    { primary: ['الزبور'], contains: 'زبور', lemmaRoot: 'زبور' },
   'makkah':   { primary: ['مكة'], contains: 'مكة', lemmaRoot: 'مكة' },
   'mekah':    { primary: ['مكة'], contains: 'مكة', lemmaRoot: 'مكة' },
-  'bakkah':   { primary: ['بكة'], contains: 'بكة', lemmaRoot: 'بكة' },
+  'bakkah':   { primary: ['ببكة'], contains: 'بكة', lemmaRoot: 'بكة' },
   'madinah':  { primary: ['المدينة'], contains: 'مدينة', lemmaRoot: 'مدينة' },
   'kaabah':   { primary: ['الكعبة'], contains: 'كعبة', lemmaRoot: 'كعبة' },
   'kabah':    { primary: ['الكعبة'], contains: 'كعبة', lemmaRoot: 'كعبة' },
@@ -173,22 +178,23 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'jahannam': { primary: ['جهنم'], contains: 'جهنم', lemmaRoot: 'جهنم' },
   'firdaus':  { primary: ['الفردوس'], contains: 'فردوس', lemmaRoot: 'فردوس' },
   'bulan':    { primary: ['الشهر'], contains: 'شهر', lemmaRoot: 'شهر' },
+  'qamar':    { primary: ['القمر'], contains: 'قمر', lemmaRoot: 'قمر' },
   'ramadhan': { primary: ['رمضان'], contains: 'رمضان', lemmaRoot: 'رمضان' },
   'ramadan':  { primary: ['رمضان'], contains: 'رمضان', lemmaRoot: 'رمضان' },
   'qadar':    { primary: ['القدر'], contains: 'قدر', lemmaRoot: 'قدر' },
-  'ad':       { primary: ['عاد'], contains: 'عاد', lemmaRoot: 'عاد' },
+  'ad':       { primary: ['عاد'], contains: 'عاد', lemmaRoot: 'عاد', lemmaForms: ['عاد', 'وعاد', 'عادا', 'وعادا', 'لعاد', 'بعاد'] },
   'tsamud':   { primary: ['ثمود'], contains: 'ثمود', lemmaRoot: 'ثمود' },
   'israil':   { primary: ['إسرائيل'], contains: 'سرائيل', lemmaRoot: 'سرائيل' },
   'yajuj':    { primary: ['يأجوج'], contains: 'أجوج', lemmaRoot: 'أجوج' },
   // Keluarga muamalah & dosa besar (ditambahkan 22 Okt — sempat terlewat)
-  'riba':     { primary: ['الربا'], contains: 'ربا', lemmaRoot: 'ربا' },
-  'zina':     { primary: ['الزنا', 'الزاني', 'الزانية'], contains: 'زان', lemmaRoot: 'زنا|زان|يزن' },
-  'khamr':    { primary: ['الخمر'], contains: 'خمر', lemmaRoot: 'خمر' },
-  'miras':    { primary: ['الخمر'], contains: 'خمر', lemmaRoot: 'خمر' },
-  'maisir':   { primary: ['الميسر', 'والميسر'], contains: 'ميسر', lemmaRoot: 'ميسر' },
-  'judi':     { primary: ['الميسر', 'والميسر'], contains: 'ميسر', lemmaRoot: 'ميسر' },
+  'riba':     { primary: ['الربا'], contains: 'الربا', lemmaRoot: 'ربا', lemmaForms: ['الربا', 'ربا'] },
+  'zina':     { primary: ['الزنا', 'الزاني', 'الزانية'], contains: 'الزان', lemmaRoot: 'الزنا|الزان|يزن|زانية', lemmaForms: ['الزاني', 'والزانية', 'الزنا', 'زانية', 'يزنين', 'يزنون', 'الزانية', 'والزاني', 'زان'] },
+  'khamr':    { primary: ['الخمر'], contains: 'خمر', lemmaRoot: 'خمر', lemmaForms: ['الخمر', 'خمرا', 'خمر'] },
+  'miras':    { primary: ['الخمر'], contains: 'خمر', lemmaRoot: 'خمر', lemmaForms: ['الخمر', 'خمرا', 'خمر'] },
+  'maisir':   { primary: ['والميسر'], contains: 'ميسر', lemmaRoot: 'ميسر' },
+  'judi':     { primary: ['والميسر'], contains: 'ميسر', lemmaRoot: 'ميسر' },
   'sihir':    { primary: ['السحر'], contains: 'سحر', lemmaRoot: 'سحر' },
-  'dosa':     { primary: ['الذنب'], contains: 'ذنب', lemmaRoot: 'ذنب' },
+  'dosa':     { primary: ['الذنب'], contains: 'ذنب', lemmaRoot: 'ذنب|إثم' },
   'amanah':   { primary: ['الأمانة'], contains: 'أمانات', lemmaRoot: 'أمانة|أمانات|أمانت' },
   // الإخلاص sebagai masdar tidak pernah muncul telanjang (0x) — yang ada bentuk-bentuk mukhlis/mukhlas
   'ikhlas':   { primary: ['المخلصين', 'مخلصين', 'مخلصا'], contains: 'خلص', lemmaRoot: 'خلص' },
@@ -293,6 +299,26 @@ export function searchLemma(
   return { count: totalCount, verseIds: [...verseSet].sort((a, b) => a - b), breakdown }
 }
 
+/** LEMMA search berbasis daftar token eksplisit (lemmaForms): presisi penuh,
+ *  tanpa tabrakan substring. Mengembalikan bentuk yang sama dengan searchLemma. */
+export function searchByForms(
+  forms: string[],
+  wordIndex: WordIndex
+): { count: number; verseIds: number[]; breakdown: { form: string; count: number }[] } {
+  const verseSet = new Set<number>()
+  const breakdown: { form: string; count: number }[] = []
+  let totalCount = 0
+  for (const form of forms) {
+    const entries = wordIndex[normalize(form)]
+    if (!entries) continue
+    breakdown.push({ form: normalize(form), count: entries.length })
+    totalCount += entries.length
+    for (const e of entries) verseSet.add(e.verse_id)
+  }
+  breakdown.sort((a, b) => b.count - a.count)
+  return { count: totalCount, verseIds: [...verseSet].sort((a, b) => a - b), breakdown }
+}
+
 // ── Main search dispatcher ─────────────────────────────────────────────────
 
 export function search(
@@ -345,6 +371,16 @@ export function search(
   }
 
   if (mode === 'lemma' || mode === 'root') {
+    // LEMMA memakai lemmaForms eksplisit bila entri punya (presisi);
+    // ROOT selalu pola akar substring (paling luas).
+    const entry = !isAr ? TRANSLIT_MAP[trimmed.toLowerCase()] : undefined
+    if (mode === 'lemma' && entry?.lemmaForms?.length) {
+      const r = searchByForms(entry.lemmaForms, wordIndex)
+      return {
+        query, arabicTerm: displayTerm, mode, totalCount: r.count,
+        verseIds: r.verseIds, breakdown: r.breakdown,
+      }
+    }
     const r = searchLemma(searchTerm, verses, wordIndex)
     return {
       query, arabicTerm: displayTerm, mode, totalCount: r.count,
@@ -386,6 +422,10 @@ function buildHighlighter(searchQuery: string, mode: HighlightMode): (normalized
     const pattern = normalize(entry.contains)
     return (w) => w.includes(pattern)
   }
+  if (mode === 'lemma' && entry.lemmaForms?.length) {
+    const formSet = new Set(entry.lemmaForms.map(normalize))
+    return (w) => formSet.has(w)
+  }
   const patterns = normalize(entry.lemmaRoot).split('|').map((p) => p.trim()).filter(Boolean)
   return (w) => patterns.some((p) => w.includes(p))
 }
@@ -421,6 +461,10 @@ function buildTokenPredicate(searchQuery: string, mode: HighlightMode): (token: 
   if (mode === 'contains') {
     const pattern = normalize(entry.contains)
     return (t) => t.includes(pattern)
+  }
+  if (mode === 'lemma' && entry.lemmaForms?.length) {
+    const formSet = new Set(entry.lemmaForms.map(normalize))
+    return (t) => formSet.has(t)
   }
   const patterns = normalize(entry.lemmaRoot).split('|').map((p) => p.trim()).filter(Boolean)
   return (t) => patterns.some((p) => t.includes(p))
