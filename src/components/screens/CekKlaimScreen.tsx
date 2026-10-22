@@ -175,7 +175,7 @@ export function CekKlaimScreen({ onNavigate, onSearch }: CekKlaimScreenProps) {
       </article>
 
       {/* Dunia = Akhirat */}
-      <article className="bg-surface border border-line rounded-[6px] p-4 mb-[10px]">
+      <article id="klaim-dunia-akhirat" className="bg-surface border border-line rounded-[6px] p-4 mb-[10px] scroll-mt-[70px]">
         <div className="flex justify-between items-start gap-2">
           <h3 className="m-0 text-[16px] font-extrabold leading-[1.35]">Dunia = Akhirat, 115 = 115?</h3>
           <StatusMarker status="bersyarat" label="LOLOS BERSYARAT" />

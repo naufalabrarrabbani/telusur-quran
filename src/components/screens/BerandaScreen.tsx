@@ -22,13 +22,17 @@ const emotions = [
   { label: 'BERSYUKUR', desc: 'Lagi di titik yang baik', icon: 'https://img.icons8.com/doodle/48/pray.png', cardId: 34, wide: true },
 ]
 
-const tags = [
+const tags: { query: string; goto?: string; anchor?: string }[] = [
   { query: 'setan' },
   { query: 'sabar' },
   { query: 'Firaun' },
   { query: 'shalat' },
   { query: 'iblis' },
-  { query: 'dunia vs akhirat' },
+  // 'dunia vs akhirat' bukan kata kamus — sebagai pencarian mentah hasilnya
+  // jalan buntu. Klaim ini rumahnya di Cek Klaim (sudah ada seksi khususnya
+  // dengan syarat hitung yang dinyatakan terbuka), jadi chip ini menavigasi
+  // ke sana dan menggulir langsung ke seksinya.
+  { query: 'dunia vs akhirat', goto: 'cek-klaim', anchor: 'klaim-dunia-akhirat' },
 ]
 
 export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreenProps) {
@@ -138,7 +142,18 @@ export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreen
         {tags.map((t) => (
           <button
             key={t.query}
-            onClick={() => handleSearch(t.query)}
+            onClick={() => {
+              if (t.goto) {
+                onNavigate(t.goto)
+                if (t.anchor) {
+                  setTimeout(() => {
+                    document.getElementById(t.anchor!)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }, 350)
+                }
+              } else {
+                handleSearch(t.query)
+              }
+            }}
             className="text-[13px] font-semibold text-ink-2 bg-paper-warm border border-line rounded-[4px] py-[7px] px-3 cursor-pointer transition-[border-color,color] duration-[120ms] hover:border-gold hover:text-gold"
           >
             {t.query}
