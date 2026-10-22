@@ -189,8 +189,14 @@ function DetailDrawer({
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-[500px] bg-paper rounded-t-[12px] sm:rounded-[12px] overflow-y-auto drawer-sheet"
-        style={{ maxHeight: '92vh' }}
+        className="w-full sm:max-w-[500px] bg-paper rounded-t-[12px] sm:rounded-[12px] overflow-y-auto drawer-sheet max-h-[92vh]"
+        // dvh, BUKAN vh: di iOS Safari satuan vh diukur dari viewport terbesar
+        // (termasuk area di balik toolbar), jadi sheet 92vh bisa lebih tinggi
+        // dari area terlihat dan header sticky + tombol close-nya terdorong
+        // keluar layar ke atas. dvh selalu mengikuti viewport yang terlihat.
+        // Browser lama tanpa dvh mengabaikan style inline ini dan memakai
+        // fallback max-h-[92vh] dari class di atas.
+        style={{ maxHeight: '92dvh' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-paper/95 backdrop-blur-sm border-b border-line-soft px-4 py-3 flex items-center justify-between z-10">
