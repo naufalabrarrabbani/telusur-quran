@@ -560,7 +560,7 @@ export function highlightArabic(
       if (/^\s+$/.test(part) || part === '') return part
       wordNo++
       return highlighted.has(wordNo)
-        ? `<span class="text-gold underline decoration-gold/35 underline-offset-[6px]">${part}</span>`
+        ? `<span class="bg-gold/22 rounded-[3px] px-[3px] py-[1px]">${part}</span>`
         : part
     })
     .join('')
