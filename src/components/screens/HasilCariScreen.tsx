@@ -126,12 +126,10 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
       >
         <button
           onClick={() => onNavigate('beranda')}
-          className="w-[36px] h-[36px] bg-transparent border border-line rounded-[4px] cursor-pointer flex items-center justify-center text-ink-2 shrink-0 p-0 hover:bg-surface transition-colors duration-100"
+          className="w-[36px] h-[36px] bg-transparent border border-line rounded-[4px] cursor-pointer flex items-center justify-center shrink-0 p-0 hover:bg-surface transition-colors duration-100"
           aria-label="Kembali ke beranda"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <UiIcon name="back-grey" size={16} />
         </button>
 
         <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
@@ -301,9 +299,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
             }}
             className="text-[13px] font-bold bg-surface text-ink-2 border border-line rounded-[4px] py-[11px] cursor-pointer hover:border-emerald hover:text-emerald transition-colors duration-120 flex items-center justify-center gap-[6px]"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M3 8L7 4L11 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <UiIcon name="up-emerald" size={14} />
             Ke atas
           </button>
           <button
@@ -319,12 +315,10 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
       {showFab && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed right-4 bottom-[80px] w-[44px] h-[44px] bg-emerald-deep text-white border-0 rounded-[4px] cursor-pointer flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[15] p-0 hover:bg-emerald fab-in"
+          className="fixed right-4 bottom-[80px] w-[44px] h-[44px] bg-emerald-deep border-0 rounded-[4px] cursor-pointer flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[15] p-0 hover:bg-emerald fab-in"
           aria-label="Scroll ke atas"
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-            <path d="M4 11L9 6L14 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <UiIcon name="up-white" size={18} />
         </button>
       )}
 
