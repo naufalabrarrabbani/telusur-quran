@@ -25,7 +25,10 @@ export function CariPage() {
   }
 
   return (
-    <div className="relative max-w-[430px] mx-auto min-h-dvh bg-paper border-x border-line-soft overflow-hidden">
+    <div
+      className="relative max-w-[430px] mx-auto min-h-dvh bg-paper border-x border-line-soft"
+      style={{ overflowX: 'clip' }}
+    >
       <main className="relative p-5 pb-12">
         <HasilCariScreen onNavigate={goHome} searchQuery={query} onSearch={handleSearch} />
         <footer className="mt-[26px] border-t border-line-soft pt-[14px] text-[11px] leading-[1.6] text-ink-4">
