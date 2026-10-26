@@ -30,7 +30,7 @@ interface Verse {
 
 interface BacaListScreenProps {
   onNavigate: (screen: string) => void
-  onSelectSurah: (surahNo: number) => void
+  onSelectSurah: (surahNo: number, ayat?: number) => void
 }
 
 type FilterType = 'semua' | 'makkiyah' | 'madaniyah' | 'pendek'
@@ -220,7 +220,7 @@ export function BacaListScreen({ onNavigate, onSelectSurah }: BacaListScreenProp
               {savedVerseCards.map((card) => (
                 <button
                   key={`${card.surah}-${card.ayat}`}
-                  onClick={() => onSelectSurah(card.surah)}
+                  onClick={() => onSelectSurah(card.surah, card.ayat)}
                   className="flex-none w-[260px] bg-surface border border-line rounded-[6px] p-3.5 cursor-pointer transition-[border-color] duration-[120ms] hover:border-gold text-left"
                 >
                   <div className="text-[11px] font-extrabold text-emerald tracking-[0.03em] uppercase">

@@ -54,6 +54,8 @@ interface Verse {
 
 interface BacaReadScreenProps {
   surahNo: number
+  /** Ayat tujuan (mis. dari Ayat Tersimpan) — menang atas posisi terakhir dibaca */
+  initialAyat?: number | null
   onBack: () => void
 }
 
@@ -94,7 +96,7 @@ function loadFontCss(fontDef: ArabicFontDef) {
   document.head.appendChild(link)
 }
 
-export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
+export function BacaReadScreen({ surahNo, initialAyat, onBack }: BacaReadScreenProps) {
   const [surahMeta, setSurahMeta] = useState<SurahMeta | null>(null)
   const [allSurahs, setAllSurahs] = useState<SurahMeta[]>([])
   const [verses, setVerses] = useState<Verse[]>([])
@@ -268,18 +270,26 @@ export function BacaReadScreen({ surahNo, onBack }: BacaReadScreenProps) {
     }
   }, [surahNo, verses.length])
 
-  // Restore last read position
+  // Posisi awal: ayat tujuan (Ayat Tersimpan) diprioritaskan, kalau tidak ada
+  // baru pakai posisi terakhir dibaca. Hanya jalan sekali per surah setelah ayat ter-render.
+  const positionedRef = useRef<number | null>(null)
   useEffect(() => {
+    if (verses.length === 0 || positionedRef.current === surahNo) return
     const lr = getLastRead()
-    if (lr && lr.surah === surahNo && lr.ayat > 1) {
-      setActiveVerse(lr.ayat)
-      // Scroll to verse after render
-      setTimeout(() => {
-        const el = document.getElementById(`verse-${lr.ayat}`)
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }, 300)
-    }
-  }, [surahNo, verses.length])
+    const target =
+      initialAyat && initialAyat > 0
+        ? initialAyat
+        : lr && lr.surah === surahNo && lr.ayat > 1
+          ? lr.ayat
+          : null
+    positionedRef.current = surahNo
+    if (!target) return
+    setActiveVerse(target)
+    setTimeout(() => {
+      const el = document.getElementById(`verse-${target}`)
+      if (el) el.scrollIntoView({ behavior: initialAyat ? 'auto' : 'smooth', block: 'center' })
+    }, 300)
+  }, [surahNo, verses.length, initialAyat])
 
   // Scroll progress tracking
   useEffect(() => {
