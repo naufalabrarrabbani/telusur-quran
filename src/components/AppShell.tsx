@@ -17,6 +17,7 @@ export function AppShell() {
   const [activeTab, setActiveTab] = useState<TabId>('beranda')
   const [activeScreen, setActiveScreen] = useState<ScreenId>('beranda')
   const [selectedSurah, setSelectedSurah] = useState<number | null>(null)
+  const [targetAyat, setTargetAyat] = useState<number | null>(null)
   const [focusCardId, setFocusCardId] = useState<number | null>(null)
 
   const handleNavigate = (screen: string) => {
@@ -40,8 +41,9 @@ export function AppShell() {
     handleNavigate('wawasan')
   }
 
-  const handleSelectSurah = useCallback((surahNo: number) => {
+  const handleSelectSurah = useCallback((surahNo: number, ayat?: number) => {
     setSelectedSurah(surahNo)
+    setTargetAyat(ayat ?? null)
     setActiveScreen('baca-read')
     setActiveTab('baca')
     window.scrollTo({ top: 0 })
@@ -90,7 +92,7 @@ export function AppShell() {
         </div>
         {activeScreen === 'baca-read' && selectedSurah && (
           <div className="block animate-[enter_0.25s_ease_both]">
-            <BacaReadScreen surahNo={selectedSurah} onBack={handleBackToList} />
+            <BacaReadScreen surahNo={selectedSurah} initialAyat={targetAyat} onBack={handleBackToList} />
           </div>
         )}
       </main>
