@@ -293,6 +293,117 @@ const TRANSLIT_MAP: Record<string, TranslitEntry> = {
   'putus asa': { primary: ['تيأسوا', 'تقنطوا'], contains: 'يأس', lemmaRoot: 'يأس|قنط', lemmaForms: ['يئس', 'يئسوا', 'يئسن', 'ييأس', 'استيأسوا', 'تيأسوا', 'استيأس', 'يقنط', 'يقنطون', 'تقنطوا', 'قنطوا'] },
 }
 
+/** RootEntry: definisi key kamus berbasis akar kata (QAC).
+ *  roots: daftar akar Arab; exclude: token ternormalisasi yang dibuang
+ *  (trap se-akar-beda-makna); note: catatan nuansa untuk reviewer/UI.
+ *  Sumber data akar: Quranic Arabic Corpus (corpus.quran.com), © 2011 Kais Dukes, GPL.
+ */
+interface RootEntry {
+  roots: string[]
+  exclude?: string[]
+  note?: string
+}
+
+/** Feature flag: root-based lookup untuk key di ROOT_DICT.
+ *  Rollback: set false → semua key kembali ke logika hardcoded (<5 menit via redeploy).
+ */
+export const USE_ROOT_INDEX = true
+
+const ROOT_DICT: Record<string, RootEntry> = {
+  'adil': { roots: ['عدل'] },
+  'air': { roots: ['موه'] },
+  'akal': { roots: ['عقل'] },
+  'akhirat': { roots: ['اخر'] },
+  'amal': { roots: ['عمل'] },
+  'azab': { roots: ['عذب'] },
+  'bahagia': { roots: ['فرح'] },
+  'barakah': { roots: ['برك'] },
+  'buah': { roots: ['ثمر', 'فكه'] },
+  'bulan': { roots: ['شهر'] },
+  'bumi': { roots: ['ارض'] },
+  'debu': { roots: ['ترب'] },
+  'dunia': { roots: ['دنو'] },
+  'dzikir': { roots: ['ذكر'] },
+  'fakir': { roots: ['فقر'] },
+  'ghaib': { roots: ['غيب'] },
+  'gunung': { roots: ['جبل'] },
+  'harapan': { roots: ['رجو'], exclude: ['أرجه', 'ترجي', 'أرجائها', 'مرجون'] },
+  'hijrah': { roots: ['هجر'] },
+  'hujan': { roots: ['مطر'] },
+  'ikan': { roots: ['حوت'] },
+  'ikhlas': { roots: ['خلص'] },
+  'jihad': { roots: ['جهد'] },
+  'khamr': { roots: ['خمر'] },
+  'khusyuk': { roots: ['خشع'] },
+  'laut': { roots: ['بحر'] },
+  'malam': { roots: ['ليل'] },
+  'marah': { roots: ['غضب'] },
+  'matahari': { roots: ['شمس'] },
+  'miras': { roots: ['خمر'] },
+  'nafsu': { roots: ['نفس'] },
+  'pintu': { roots: ['بوب'] },
+  'pohon': { roots: ['شجر'] },
+  'puasa': { roots: ['صوم'] },
+  'putus asa': { roots: ['ياس', 'قنط'] },
+  'qamar': { roots: ['قمر'] },
+  'quran': { roots: ['قرا'] },
+  'rasul': { roots: ['رسل'] },
+  'ratus': { roots: ['ماي'] },
+  'rezeki': { roots: ['رزق'] },
+  'rizki': { roots: ['رزق'] },
+  'rumah': { roots: ['بيت'] },
+  'saleh': { roots: ['صلح'] },
+  'sapi': { roots: ['بقر'] },
+  'sedih': { roots: ['حزن', 'بثث', 'غمم'], exclude: ['الغمام', 'بالغمام', 'المبثوث', 'بث', 'مبثوثة', 'منبثا', 'وبث', 'يبث'] },
+  'setan': { roots: ['شطن'] },
+  'shalih': { roots: ['صلح'] },
+  'shirath': { roots: ['صرط'] },
+  'sirath': { roots: ['صرط'] },
+  'syaitan': { roots: ['شطن'] },
+  'syetan': { roots: ['شطن'] },
+  'takut': { roots: ['خوف'] },
+  'tanah': { roots: ['ترب'] },
+  'tujuh': { roots: ['سبع'] },
+  'unta': { roots: ['ابل', 'بعر', 'نوق'] },
+  'zaitun': { roots: ['زيت'] },
+  'zikir': { roots: ['ذكر'] },
+  'zina': { roots: ['زني'] },
+};
+
+/** Bentuk root-index.json: akar Arab → daftar verse_id & token. */
+export interface RootIndex {
+  [root: string]: { verses: number[]; tokens: string[] }
+}
+
+/** LEMMA berbasis akar kata (QAC): gabungan ayat semua akar minus exclude.
+ *  Mengembalikan bentuk yang sama dengan searchLemma/searchByForms. */
+export function searchByRoots(
+  entry: RootEntry,
+  rootIndex: RootIndex,
+  wordIndex: WordIndex
+): { count: number; verseIds: number[]; breakdown: { form: string; count: number }[] } {
+  const exclude = new Set((entry.exclude || []).map(normalize))
+  const verseSet = new Set<number>()
+  const breakdown: { form: string; count: number }[] = []
+  let totalCount = 0
+  const seen = new Set<string>()
+  for (const root of entry.roots) {
+    const ri = rootIndex[root]
+    if (!ri) continue
+    for (const token of ri.tokens) {
+      if (exclude.has(token) || seen.has(token)) continue
+      seen.add(token)
+      const entries = wordIndex[token]
+      if (!entries) continue
+      breakdown.push({ form: token, count: entries.length })
+      totalCount += entries.length
+      for (const e of entries) verseSet.add(e.verse_id)
+    }
+  }
+  breakdown.sort((a, b) => b.count - a.count)
+  return { count: totalCount, verseIds: [...verseSet].sort((a, b) => a - b), breakdown }
+}
+
 export function transliterate(input: string): string[] {
   const lower = input.trim().toLowerCase()
   const entry = TRANSLIT_MAP[lower]
@@ -418,7 +529,8 @@ export function search(
   query: string,
   mode: 'exact' | 'contains' | 'lemma' | 'root',
   verses: Verse[],
-  wordIndex: WordIndex
+  wordIndex: WordIndex,
+  rootIndex?: RootIndex
 ): SearchResult {
   const trimmed = query.trim()
   const isAr = isArabic(trimmed)
@@ -466,7 +578,19 @@ export function search(
   if (mode === 'lemma' || mode === 'root') {
     // LEMMA memakai lemmaForms eksplisit bila entri punya (presisi);
     // ROOT selalu pola akar substring (paling luas).
+    // Bila USE_ROOT_INDEX aktif dan key terdaftar di ROOT_DICT, pakai
+    // lookup berbasis akar kata (lebih lengkap & bebas trap substring).
     const entry = !isAr ? TRANSLIT_MAP[trimmed.toLowerCase()] : undefined
+    const rootEntry = !isAr && USE_ROOT_INDEX && rootIndex
+      ? ROOT_DICT[trimmed.toLowerCase()]
+      : undefined
+    if (mode === 'lemma' && rootEntry) {
+      const r = searchByRoots(rootEntry, rootIndex!, wordIndex)
+      return {
+        query, arabicTerm: displayTerm, mode, totalCount: r.count,
+        verseIds: r.verseIds, breakdown: r.breakdown,
+      }
+    }
     if (mode === 'lemma' && entry?.lemmaForms?.length) {
       const r = searchByForms(entry.lemmaForms, wordIndex)
       return {
@@ -536,13 +660,28 @@ export interface MatchedToken {
  * PASTI meleset — yang setia adalah posisi tokennya (indeks menunjuk token
  * text_simple, terverifikasi 99,95%).
  */
-function buildTokenPredicate(searchQuery: string, mode: HighlightMode): (token: string) => boolean {
+function buildTokenPredicate(searchQuery: string, mode: HighlightMode, rootIndex?: RootIndex): (token: string) => boolean {
   const trimmed = searchQuery.trim()
   if (isArabic(trimmed)) {
     const term = normalize(trimmed)
     return mode === 'exact' ? (t) => t === term : (t) => t.includes(term)
   }
-  const entry = TRANSLIT_MAP[trimmed.toLowerCase()]
+  const key = trimmed.toLowerCase()
+  // Root-based: himpunan token dari akar (minus exclude)
+  if (USE_ROOT_INDEX && rootIndex && mode === 'lemma') {
+    const rootEntry = ROOT_DICT[key]
+    if (rootEntry) {
+      const exclude = new Set((rootEntry.exclude || []).map(normalize))
+      const tokenSet = new Set<string>()
+      for (const root of rootEntry.roots) {
+        for (const t of rootIndex[root]?.tokens || []) {
+          if (!exclude.has(t)) tokenSet.add(t)
+        }
+      }
+      return (t) => tokenSet.has(t)
+    }
+  }
+  const entry = TRANSLIT_MAP[key]
   if (!entry) {
     const term = normalize(trimmed)
     return (t) => t.includes(term)
@@ -567,9 +706,10 @@ function buildTokenPredicate(searchQuery: string, mode: HighlightMode): (token: 
 export function matchedTokensByVerse(
   searchQuery: string,
   mode: HighlightMode,
-  wordIndex: WordIndex
+  wordIndex: WordIndex,
+  rootIndex?: RootIndex
 ): Map<number, MatchedToken[]> {
-  const predicate = buildTokenPredicate(searchQuery, mode)
+  const predicate = buildTokenPredicate(searchQuery, mode, rootIndex)
   const map = new Map<number, MatchedToken[]>()
   for (const token of Object.keys(wordIndex)) {
     if (!predicate(token)) continue

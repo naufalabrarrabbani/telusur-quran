@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { VerseCard } from '@/components/ui/VerseCard'
 import { UiIcon } from '@/components/ui/UiIcon'
-import { search, highlightArabic, matchedTokensByVerse, type SearchResult, type Verse, type WordIndex, type SurahMeta } from '@/lib/search'
+import { search, highlightArabic, matchedTokensByVerse, type SearchResult, type Verse, type WordIndex, type SurahMeta, type RootIndex } from '@/lib/search'
 import { loadData, getVerse, getSurah } from '@/lib/data'
 
 interface HasilCariScreenProps {
@@ -41,6 +41,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
   const [verses, setVerses] = useState<Verse[] | null>(null)
   const [wordIndex, setWordIndex] = useState<WordIndex | null>(null)
   const [surahMeta, setSurahMeta] = useState<SurahMeta[] | null>(null)
+  const [rootIndex, setRootIndex] = useState<RootIndex | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Scroll state for sticky nav + FAB
@@ -53,6 +54,7 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
       setVerses(data.verses)
       setWordIndex(data.wordIndex)
       setSurahMeta(data.surahMeta)
+      setRootIndex(data.rootIndex)
       setLoading(false)
     })
   }, [])
@@ -75,13 +77,13 @@ export function HasilCariScreen({ onNavigate, searchQuery = 'setan', onSearch }:
 
   const result: SearchResult | null = useMemo(() => {
     if (!verses || !wordIndex) return null
-    return search(searchQuery, activeMode, verses, wordIndex)
-  }, [searchQuery, activeMode, verses, wordIndex])
+    return search(searchQuery, activeMode, verses, wordIndex, rootIndex || undefined)
+  }, [searchQuery, activeMode, verses, wordIndex, rootIndex])
 
   const matchedMap = useMemo(() => {
     if (!wordIndex) return null
-    return matchedTokensByVerse(searchQuery, activeMode, wordIndex)
-  }, [searchQuery, activeMode, wordIndex])
+    return matchedTokensByVerse(searchQuery, activeMode, wordIndex, rootIndex || undefined)
+  }, [searchQuery, activeMode, wordIndex, rootIndex])
 
   const exactResult: SearchResult | null = useMemo(() => {
     if (!verses || !wordIndex || !result || activeMode !== 'lemma' || !result.breakdown || result.breakdown.length <= 1) return null

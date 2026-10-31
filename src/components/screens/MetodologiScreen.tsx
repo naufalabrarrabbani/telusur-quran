@@ -102,10 +102,22 @@ export function MetodologiScreen({ onNavigate }: MetodologiScreenProps) {
         Pewarnaan huruf mengikuti anotasi edisi tersebut apa adanya; yang kami kerjakan adalah memetakannya ke legenda warna dan nama hukum berbahasa Indonesia. Pemetaan tiap kode anotasi ke hukumnya kami verifikasi dari konteks hurufnya (mis. kode idgham selalu jatuh pada nun/tanwin yang bertemu huruf idgham). <strong className="text-ink-2">Tidak ada standar warna tajwid yang universal</strong> — tiap mushaf berbeda — jadi legenda kami adalah keputusan produk yang dinyatakan terbuka, dan akan ditinjau berkala bersama penelaah kami (dosen Lc.). Tanda berhenti (waqaf) dan saktah (18:1, 36:52, 75:27, 83:14; 69:28 dalam sebagian riwayat) berasal dari tanda yang memang ada di teks edisi tersebut.
       </p>
 
+      <SectionTitle>Pembaruan hitungan: berbasis akar kata (Nov 2026)</SectionTitle>
+      <p className="m-0 text-[13px] leading-[1.7] text-ink-3">
+        Sejak November 2026, sebagian kata kunci dihitung berbasis <strong className="text-ink-2">akar kata</strong> (root),
+        bukan lagi substring. Akar kata diambil dari anotasi morfologi <strong className="text-ink-2">Quranic Arabic Corpus</strong> yang
+        diverifikasi manual per kata. Hasilnya: hitungan lebih lengkap (bentuk ber-hamzah/vokal-panjang yang lolos dari
+        pencocokan substring kini tertangkap) dan bebas dari jebakan substring lintas-akar.
+        Perubahan angka yang terjadi: <strong className="text-ink-2">takut 99→115</strong> (tambahan bentuk خيفة, خائف, تخويفا yang
+        terlewat), <strong className="text-ink-2">marah 20→21</strong> (مغاضبا, QS 21:87), <strong className="text-ink-2">putus asa 12→16</strong> (القانطين QS 15:55,
+        قنوط QS 41:49). Angka baru = lebih lengkap &amp; terverifikasi, sejalan dengan janji wasit kami.
+      </p>
+
       <SectionTitle>Sumber &amp; rujukan</SectionTitle>
       <ul className="m-0 pl-[18px] text-[13px] leading-[1.8] text-ink-3">
         <li><strong className="text-ink-2">Teks:</strong> Tanzil (teks Al-Qur&apos;an terverifikasi), via dataset AlQuran Cloud.</li>
         <li><strong className="text-ink-2">Terjemahan:</strong> Kementerian Agama Republik Indonesia.</li>
+        <li><strong className="text-ink-2">Morfologi (akar kata):</strong> <a href="https://corpus.quran.com" target="_blank" rel="noreferrer" className="font-semibold text-emerald underline decoration-emerald/30 underline-offset-2">Quranic Arabic Corpus</a> © 2011 Kais Dukes, lisensi GNU GPL — anotasi terverifikasi manual per kata; teks ayat tetap dari Tanzil, QAC hanya dipakai untuk akar katanya.</li>
         <li><strong className="text-ink-2">Tafsir &amp; konteks:</strong> Tafsir Kemenag, Tafsir Al-Mishbah (M. Quraish Shihab), Tafsir Ibnu Katsir.</li>
         <li><strong className="text-ink-2">Asbabun nuzul:</strong> Al-Wahidi; Lubab an-Nuqul karya As-Suyuthi.</li>
         <li><strong className="text-ink-2">Konkordansi:</strong> Al-Mu&apos;jam al-Mufahras li Alfazh al-Qur&apos;an (Muhammad Fuad Abdul Baqi).</li>
@@ -116,7 +128,7 @@ export function MetodologiScreen({ onNavigate }: MetodologiScreenProps) {
       </p>
 
       <footer className="mt-[30px] border-t border-line-soft pt-[14px] text-[11px] leading-[1.6] text-ink-4">
-        Telusur Qur&apos;an dibangun oleh <strong className="text-ink-3">HijaLearn</strong> (hijalearn.id) · Teks Al-Qur&apos;an © Tanzil · Terjemahan © Kementerian Agama RI · 2026.
+        Telusur Qur&apos;an dibangun oleh <strong className="text-ink-3">HijaLearn</strong> (hijalearn.id) · Teks Al-Qur&apos;an © Tanzil · Terjemahan © Kementerian Agama RI · Data morfologi © Quranic Arabic Corpus (Kais Dukes, GPL) · 2026.
       </footer>
     </div>
   )

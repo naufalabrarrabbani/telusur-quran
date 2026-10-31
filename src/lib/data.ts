@@ -1,11 +1,12 @@
 // Data loader — fetches JSON at runtime from /data/ (static assets in public/)
 
-import type { Verse, WordIndex, SurahMeta } from '@/lib/search'
+import type { Verse, WordIndex, SurahMeta, RootIndex } from '@/lib/search'
 
 interface QuranData {
   verses: Verse[]
   wordIndex: WordIndex
   surahMeta: SurahMeta[]
+  rootIndex: RootIndex
 }
 
 let cached: QuranData | null = null
@@ -16,15 +17,17 @@ export async function loadData(): Promise<QuranData> {
   if (loading) return loading
 
   loading = (async () => {
-    const [versesRes, wordIndexRes, surahMetaRes] = await Promise.all([
+    const [versesRes, wordIndexRes, surahMetaRes, rootIndexRes] = await Promise.all([
       fetch('/data/verses.json'),
       fetch('/data/word-index.json'),
       fetch('/data/surah-meta.json'),
+      fetch('/data/root-index.json'),
     ])
     const verses = (await versesRes.json()) as Verse[]
     const wordIndex = (await wordIndexRes.json()) as unknown as WordIndex
     const surahMeta = (await surahMetaRes.json()) as SurahMeta[]
-    cached = { verses, wordIndex, surahMeta }
+    const rootIndex = (await rootIndexRes.json()) as unknown as RootIndex
+    cached = { verses, wordIndex, surahMeta, rootIndex }
     return cached
   })()
 
