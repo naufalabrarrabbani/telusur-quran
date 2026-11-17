@@ -10,8 +10,9 @@ import { MetodologiScreen } from '@/components/screens/MetodologiScreen'
 import { BacaListScreen } from '@/components/screens/BacaListScreen'
 import { InstallBanner } from '@/components/ui/InstallBanner'
 import { BacaReadScreen } from '@/components/screens/BacaReadScreen'
+import { AlKahfSeriesScreen } from '@/components/screens/AlKahfSeriesScreen'
 
-type ScreenId = TabId | 'baca-read'
+type ScreenId = TabId | 'baca-read' | 'al-kahf'
 
 export function AppShell() {
   const [activeTab, setActiveTab] = useState<TabId>('beranda')
@@ -21,6 +22,12 @@ export function AppShell() {
   const [focusCardId, setFocusCardId] = useState<number | null>(null)
 
   const handleNavigate = (screen: string) => {
+    if (screen === 'al-kahf') {
+      setActiveScreen('al-kahf')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     const tabId = screen as TabId
     setActiveTab(tabId)
     setActiveScreen(tabId)
@@ -86,6 +93,9 @@ export function AppShell() {
         </div>
         <div className={activeScreen === 'metodologi' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
           <MetodologiScreen onNavigate={handleNavigate} />
+        </div>
+        <div className={activeScreen === 'al-kahf' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
+          <AlKahfSeriesScreen onBack={() => handleNavigate('beranda')} />
         </div>
         <div className={activeScreen === 'baca' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
           <BacaListScreen onNavigate={handleNavigate} onSelectSurah={handleSelectSurah} />

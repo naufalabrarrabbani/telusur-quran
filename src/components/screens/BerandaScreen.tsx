@@ -115,6 +115,27 @@ export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreen
         ))}
       </div>
 
+      {/* Al-Kahf series CTA */}
+      <button
+        onClick={() => onNavigate('al-kahf')}
+        className="mt-5 w-full text-left bg-emerald-deep text-white border border-emerald-deep rounded-[6px] p-4 cursor-pointer transition-colors hover:bg-emerald"
+        aria-label="Masuk ke seri Al-Kahf"
+      >
+        <span className="block text-[10px] font-extrabold tracking-[0.12em] uppercase text-gold-light">
+          Seri baru · Al-Kahf
+        </span>
+        <span className="block mt-[6px] text-[18px] leading-[1.35] font-extrabold tracking-[-0.02em]">
+          Masuk Gua: Al-Kahf, dibaca pelan-pelan.
+        </span>
+        <span className="block mt-[7px] text-[12px] leading-[1.6] text-white/80">
+          Satu surah, empat kisah, dan puluhan detail yang lewat begitu saja tiap Jumat. Seri ini membacanya satu per satu — dengan ayatnya, dengan hitungannya, tanpa klaim yang nggak bisa dicek.
+        </span>
+        <span className="inline-flex items-center gap-[6px] mt-3 text-[12px] font-extrabold text-gold-light">
+          Mulai dari Kisah Pertama
+          <span aria-hidden="true">→</span>
+        </span>
+      </button>
+
       {/* Search */}
       <form
         className="flex items-center gap-[10px] bg-surface border-[1.5px] border-line rounded-[6px] p-[5px_5px_5px_14px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] mt-[22px] focus-within:border-emerald transition-[border-color] duration-150"
