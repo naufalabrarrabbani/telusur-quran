@@ -345,8 +345,8 @@ export function AlKahfSeriesScreen({ onBack, onReadAyat }: AlKahfSeriesScreenPro
       </div>
 
       <footer className="mt-5 border-t border-line-soft pt-[12px] text-[11px] leading-[1.6] text-ink-4">
-        Kartu “Bersyarat” wajib ditinjau Dosen sebelum tayang. Teks ayat tidak
-        ditulis ulang di sini; rujukan ayat mengarah ke dataset aplikasi.
+        Kartu “Bersyarat” memuat penafsiran yang masih perlu ditinjau. Teks ayat
+        tidak ditulis ulang di sini; rujukan ayat mengarah ke dataset aplikasi.
       </footer>
 
       {openTopic && (
