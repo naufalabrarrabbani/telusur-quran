@@ -14,9 +14,9 @@ import { AlKahfSeriesScreen } from '@/components/screens/AlKahfSeriesScreen'
 
 type ScreenId = TabId | 'baca-read' | 'al-kahf'
 
-export function AppShell() {
+export function AppShell({ initialScreen = 'beranda' }: { initialScreen?: ScreenId }) {
   const [activeTab, setActiveTab] = useState<TabId>('beranda')
-  const [activeScreen, setActiveScreen] = useState<ScreenId>('beranda')
+  const [activeScreen, setActiveScreen] = useState<ScreenId>(initialScreen)
   const [selectedSurah, setSelectedSurah] = useState<number | null>(null)
   const [targetAyat, setTargetAyat] = useState<number | null>(null)
   const [focusCardId, setFocusCardId] = useState<number | null>(null)
