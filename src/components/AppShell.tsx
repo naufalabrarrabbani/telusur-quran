@@ -14,6 +14,16 @@ import { AlKahfSeriesScreen } from '@/components/screens/AlKahfSeriesScreen'
 
 type ScreenId = TabId | 'baca-read' | 'al-kahf'
 
+// URL mengikuti layar: /alkahf-series saat layar seri tampil, / untuk layar
+// lain. pushState dipakai supaya shell tidak me-remount (state app tetap
+// utuh); tombol back/forward browser ditangani lewat popstate di AppShell.
+function syncUrlForScreen(screen: ScreenId) {
+  const target = screen === 'al-kahf' ? '/alkahf-series' : '/'
+  if (window.location.pathname !== target) {
+    window.history.pushState({ screen }, '', target)
+  }
+}
+
 export function AppShell({ initialScreen = 'beranda' }: { initialScreen?: ScreenId }) {
   const [activeTab, setActiveTab] = useState<TabId>('beranda')
   const [activeScreen, setActiveScreen] = useState<ScreenId>(initialScreen)
@@ -24,6 +34,7 @@ export function AppShell({ initialScreen = 'beranda' }: { initialScreen?: Screen
   const handleNavigate = (screen: string) => {
     if (screen === 'al-kahf') {
       setActiveScreen('al-kahf')
+      syncUrlForScreen('al-kahf')
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -31,6 +42,7 @@ export function AppShell({ initialScreen = 'beranda' }: { initialScreen?: Screen
     const tabId = screen as TabId
     setActiveTab(tabId)
     setActiveScreen(tabId)
+    syncUrlForScreen(tabId)
     if (tabId !== 'baca') {
       setSelectedSurah(null)
     }
@@ -53,6 +65,7 @@ export function AppShell({ initialScreen = 'beranda' }: { initialScreen?: Screen
     setTargetAyat(ayat ?? null)
     setActiveScreen('baca-read')
     setActiveTab('baca')
+    syncUrlForScreen('baca-read')
     window.scrollTo({ top: 0 })
   }, [])
 
@@ -60,7 +73,23 @@ export function AppShell({ initialScreen = 'beranda' }: { initialScreen?: Screen
     setSelectedSurah(null)
     setActiveScreen('baca')
     setActiveTab('baca')
+    syncUrlForScreen('baca')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  // Tombol back/forward browser: layar mengikuti URL.
+  useEffect(() => {
+    const onPopState = () => {
+      if (window.location.pathname === '/alkahf-series') {
+        setActiveScreen('al-kahf')
+      } else {
+        setSelectedSurah(null)
+        setActiveScreen('beranda')
+      }
+      window.scrollTo({ top: 0 })
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   // Listen for surah navigation events from BacaReadScreen
