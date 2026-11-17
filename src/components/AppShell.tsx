@@ -95,7 +95,7 @@ export function AppShell() {
           <MetodologiScreen onNavigate={handleNavigate} />
         </div>
         <div className={activeScreen === 'al-kahf' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
-          <AlKahfSeriesScreen onBack={() => handleNavigate('beranda')} />
+          <AlKahfSeriesScreen onBack={() => handleNavigate('beranda')} onReadAyat={handleSelectSurah} />
         </div>
         <div className={activeScreen === 'baca' ? 'block animate-[enter_0.25s_ease_both]' : 'hidden'}>
           <BacaListScreen onNavigate={handleNavigate} onSelectSurah={handleSelectSurah} />

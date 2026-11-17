@@ -118,9 +118,19 @@ export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreen
       {/* Al-Kahf series CTA */}
       <button
         onClick={() => onNavigate('al-kahf')}
-        className="mt-5 w-full text-left bg-emerald-deep text-white border border-emerald-deep rounded-[6px] p-4 cursor-pointer transition-colors hover:bg-emerald"
+        className="mt-5 w-full text-left bg-emerald-deep text-white border border-emerald-deep rounded-[6px] p-0 overflow-hidden cursor-pointer transition-colors hover:bg-emerald"
         aria-label="Masuk ke seri Al-Kahf"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/kahf/kahf-01.jpg"
+          alt="Ilustrasi seri Al-Kahf: jalan membelah empat dari mulut gua"
+          width={960}
+          height={540}
+          loading="lazy"
+          className="block w-full aspect-video object-cover"
+        />
+        <span className="block p-4">
         <span className="block text-[10px] font-extrabold tracking-[0.12em] uppercase text-gold-light">
           Seri baru · Al-Kahf
         </span>
@@ -133,6 +143,7 @@ export function BerandaScreen({ onNavigate, onSearch, onEmotion }: BerandaScreen
         <span className="inline-flex items-center gap-[6px] mt-3 text-[12px] font-extrabold text-gold-light">
           Mulai dari Kisah Pertama
           <span aria-hidden="true">→</span>
+        </span>
         </span>
       </button>
 

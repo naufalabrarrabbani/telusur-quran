@@ -35,6 +35,22 @@ try {
   console.warn('lewati folder ui -', e.message)
 }
 
+// Konvensi folder: semua assets-b64/kahf/<nama>.jpg.b64 → public/images/kahf/<nama>.jpg
+// (ilustrasi seri Al-Kahf — lihat src/lib/al-kahf-data.ts). Tambah ilustrasi
+// cukup jatuhkan .b64 baru di sana.
+try {
+  for (const f of readdirSync('assets-b64/kahf')) {
+    if (!f.endsWith('.jpg.b64')) continue
+    const dest = `public/images/kahf/${f.slice(0, -4)}`
+    const b64 = readFileSync(`assets-b64/kahf/${f}`, 'utf8').replace(/\s+/g, '')
+    mkdirSync(dirname(dest), { recursive: true })
+    writeFileSync(dest, Buffer.from(b64, 'base64'))
+    console.log('decode kahf', f, '->', dest)
+  }
+} catch (e) {
+  console.warn('lewati folder kahf -', e.message)
+}
+
 for (const [src, dest] of PAIRS) {
   try {
     const b64 = readFileSync(src, 'utf8').replace(/\s+/g, '')
