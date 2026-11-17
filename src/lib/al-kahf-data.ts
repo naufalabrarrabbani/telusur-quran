@@ -72,7 +72,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     detail:
       'Surah ini dibaca tiap Jumat — dan keempat ujian itu juga datang tiap pekan dalam bentuk yang lebih kecil. Latihan yang diulang-ulang, bukan teori yang sekali dibaca.',
     statusNote:
-      'Framing empat ujian adalah penafsiran ulama, ditulis dengan atribusi eksplisit; isi kisah dari ayat. Menunggu review Dosen untuk seri ini.',
+      'Framing empat ujian adalah penafsiran ulama, ditulis dengan atribusi eksplisit; isi kisah dari ayat.',
     closing: 'Empat ujian dalam satu surah. Minggu ini, yang mana yang sedang datang ke lo?',
     related: [7],
   },
@@ -84,7 +84,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     imageAlt: 'Ilustrasi seri Al-Kahf: matahari dan bulan di atas gurun',
     status: 'bersyarat',
     statusShort: 'Bersyarat',
-    statusLabel: 'BERSYARAT · REVIEW DOSEN',
+    statusLabel: 'BERSYARAT',
     reference: 'QS 18:25–26',
     ayat: ['18:25', '18:26'],
     readAyat: 25,
@@ -110,7 +110,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     detail:
       'Ayatnya sendiri tidak menetapkan satu angka final — ayat 26 mengalihkan dari menghitung ke siapa yang mengetahui. Pola surah ini: pasti di mana yang penting, rendah hati di mana yang tidak.',
     statusNote:
-      'Dua pendapat ulama, keduanya dicatat; tidak ada jawaban tunggal yang diklaim. Menunggu review Dosen.',
+      'Dua pendapat ulama, keduanya dicatat; tidak ada jawaban tunggal yang diklaim.',
     closing: 'Kalau ayatnya sendiri tidak menetapkan angka pastinya — kenapa kita ngotot menetapkan?',
     related: [10],
   },
@@ -262,7 +262,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     detail:
       'Dzulqarnain tidak mengklaim tembok itu sebagai prestasinya — ia menyandarkannya pada rahmat Tuhannya (QS 18:98). Ujian kekuasaan: apa yang dilakukan dengan kekuasaan itu.',
     statusNote:
-      'Isi ayat terverifikasi. Identitas Dzulqarnain diperselisihkan ulama — tidak dinyatakan di kartu. Status dan lokasi tembok saat ini adalah perkara ghaib — tidak diklaim. Framing tembok direkomendasikan lewat review Dosen.',
+      'Isi ayat terverifikasi. Identitas Dzulqarnain diperselisihkan ulama — tidak dinyatakan di kartu. Status dan lokasi tembok saat ini adalah perkara ghaib — tidak diklaim.',
     closing:
       'Temboknya pasti runtuh — itu janji ayatnya. Kapan dan di mana, ayatnya tidak bilang. Yang bilang, bukan ayatnya.',
     related: [7],
@@ -275,7 +275,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     imageAlt: 'Ilustrasi seri Al-Kahf: cahaya di dalam gua',
     status: 'bersyarat',
     statusShort: 'Bersyarat',
-    statusLabel: 'BERSYARAT · REVIEW DOSEN',
+    statusLabel: 'BERSYARAT',
     reference: 'HR Muslim 809; QS 18:1–10, 101–110',
     ayat: ['18:1', '18:110'],
     readAyat: 1,
@@ -305,7 +305,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     detail:
       'Ketidakpastian Al-Munawi — “atau mungkin ada kekhususan lain pada surah ini” — dipertahankan di kartu, bukan dihapus. Penjelasan ulama bukan teks hadits, dan bedanya ditulis eksplisit.',
     statusNote:
-      'Hadits terverifikasi; bagian “kenapa” adalah penjelasan ulama, bukan teks hadits — dan bedanya ditulis eksplisit di kartu. Menunggu review Dosen.',
+      'Hadits terverifikasi; bagian “kenapa” adalah penjelasan ulama, bukan teks hadits — dan bedanya ditulis eksplisit di kartu.',
     closing:
       'Perlindungannya dijanjikan. Alasannya dijelaskan ulama. Keduanya tidak sama — dan bedanya penting.',
     related: [6],
@@ -318,7 +318,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     imageAlt: 'Ilustrasi seri Al-Kahf: cahaya lembut menembus kegelapan',
     status: 'bersyarat',
     statusShort: 'Bersyarat',
-    statusLabel: 'BERSYARAT · REVIEW DOSEN',
+    statusLabel: 'BERSYARAT',
     reference: 'HR Hakim/Al-Baihaqi',
     ayat: [],
     readAyat: 1,
@@ -338,13 +338,13 @@ export const KAHF_TOPICS: KahfTopic[] = [
       },
       {
         title: 'Kapan membacanya',
-        text: 'Malam dan hari Jumat. Detail batas waktu amalan mengikuti verifikasi Dosen — jangan tetapkan rincian yang belum diverifikasi.',
+        text: 'Malam dan hari Jumat. Batas waktu amalannya tidak dirinci di kartu ini.',
       },
     ],
     detail:
       'Janji ini melekat pada surah yang sama yang melindungi dari Dajjal (kartu 07) — satu bacaan mingguan, dua janji.',
     statusNote:
-      'GATE KUNING — derajat hadits dan detail amalan menunggu verifikasi Dosen sebelum tayang. Jangan tayangkan kartu ini sebelum review.',
+      'Derajat hadits dan detail amalan masih perlu ditinjau; kartu ini tidak menetapkan rincian yang belum diverifikasi.',
     closing:
       'Cahaya di antara dua Jumat. Pertanyaannya bukan cuma dibaca atau tidak — tapi dibaca dengan perhatian atau tidak.',
     related: [7],
@@ -383,7 +383,7 @@ export const KAHF_TOPICS: KahfTopic[] = [
     detail:
       'Surah ini berulang kali membiarkan detail menggantung — Raqim di sini, jumlah mereka di ayat 22, lamanya tidur di ayat 25–26. Polanya konsisten: yang penting ditegaskan, yang tidak penting dibiarkan.',
     statusNote:
-      'Kontested — daftar pendapat perlu verifikasi Dosen; kartu menyajikan sebagai pertanyaan, bukan jawaban tunggal.',
+      'Kontested — daftar pendapat masih perlu ditinjau; kartu menyajikan sebagai pertanyaan, bukan jawaban tunggal.',
     closing: 'Satu kata, tiga pendapat, nol kepastian — dan ayatnya baik-baik saja dengan itu.',
     related: [10, 2],
   },
